@@ -27,6 +27,7 @@ export type CareerId =
   | 'UNIVERSE_CHAOS_LAW_MASTER';
 
 export type TowerId = 'EARTH_BASIC_AUTO_TURRET';
+export type MaterialId = 'EARTH_BASIC_MATERIAL' | 'EARTH_STAR_CORE';
 export type EnemyId = 'EARTH_GRUNT' | 'EARTH_RUNNER' | 'EARTH_TANK' | 'EARTH_BOSS';
 export type TargetingMode = 'FIRST' | 'NEAREST' | 'LAST' | 'FARTHEST' | 'STRONGEST' | 'WEAKEST';
 export type BattleState =
@@ -100,6 +101,8 @@ export interface PlayerSave {
   earthTutorialCleared: boolean;
   tutorialFirstClearRewardClaimed: boolean;
   tutorialClearCount: number;
+  committedBattleRewardSessionIds: string[];
+  firstGrowthUpgradeCompleted: boolean;
   saveCreatedAt: string;
   lastSaveAt: string;
 }
@@ -152,4 +155,28 @@ export interface EnemyData {
   baseDamage: number;
   reward: number;
   boss: boolean;
+}
+
+export interface MaterialData {
+  id: MaterialId;
+  displayName: string;
+  description: string;
+  realm: RealmType;
+  rarity: 'COMMON' | 'RARE';
+  icon: string;
+  category: 'TOWER_LEVEL' | 'TOWER_STAR';
+  maxStack: number;
+  tags: string[];
+}
+
+export interface MaterialReward {
+  materialID: MaterialId;
+  amount: number;
+}
+
+export interface RewardResult {
+  dungeonID: string;
+  battleSessionID: string;
+  firstClear: boolean;
+  materials: MaterialReward[];
 }

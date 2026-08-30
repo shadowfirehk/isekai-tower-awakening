@@ -1,7 +1,5 @@
 import { EnemyData, EnemyId, RealmType } from './types';
 
-export const EARTH_MATERIAL_ID = 'EARTH_BASIC_MATERIAL';
-
 export const ENEMY_CATALOG: Record<EnemyId, EnemyData> = {
   EARTH_GRUNT: { id: 'EARTH_GRUNT', name: '裂隙行者', maxHP: 80, defense: 10, speed: 0.07, baseDamage: 1, reward: 2, boss: false },
   EARTH_RUNNER: { id: 'EARTH_RUNNER', name: '疾行獵獸', maxHP: 58, defense: 4, speed: 0.105, baseDamage: 1, reward: 3, boss: false },
@@ -49,6 +47,6 @@ export const EARTH_TUTORIAL_DUNGEON = {
   totalWaves: 25,
   startingBaseHP: 20,
   deploymentCap: 3,
-  firstClearReward: { materialId: EARTH_MATERIAL_ID, amount: 100 },
+  rewardConfigID: 'EARTH_TUTORIAL_REWARDS',
   waves: TUTORIAL_WAVES,
 } as const;

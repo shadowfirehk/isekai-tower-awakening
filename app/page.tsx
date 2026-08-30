@@ -26,9 +26,12 @@ import { TowerScreen } from '@/components/game/tower-screen';
 import { AwakeningController } from '@/lib/game/awakening-controller';
 import { getCareerById } from '@/lib/game/careers';
 import { getCareerModifiers, getDefenseMultiplier } from '@/lib/game/passives';
+import { InventoryService } from '@/lib/game/inventory-service';
+import { EARTH_BASIC_MATERIAL, EARTH_STAR_CORE } from '@/lib/game/materials';
 import { advancePreparation, canAwaken, canEnterTutorial, PREPARATION_REQUIRED_DAYS } from '@/lib/game/progression';
 import { RNGManager } from '@/lib/game/rng-manager';
 import { createNewSave, SaveManager } from '@/lib/game/save-manager';
+import { TowerUpgradeService } from '@/lib/game/tower-upgrade-service';
 import { GameState, PlayerSave, RealmType } from '@/lib/game/types';
 
 type Stage = 'menu' | 'preparation' | 'charging' | 'candidates' | 'reveal' | 'career' | 'tower' | 'battle';
@@ -71,6 +74,8 @@ export default function Home() {
   const career = useMemo(() => getCareerById(save.earthCareer), [save.earthCareer]);
   const modifiers = useMemo(() => getCareerModifiers(save), [save]);
   const awakeningAvailable = canAwaken(save);
+  const starterTowerID = save.ownedTowers[0]?.towerID;
+  const growthAvailable = Boolean(starterTowerID && (TowerUpgradeService.canUpgradeLevel(save, starterTowerID).ok || TowerUpgradeService.canUpgradeStar(save, starterTowerID).ok));
 
   useEffect(() => {
     const restore = window.setTimeout(() => {
@@ -121,6 +126,11 @@ export default function Home() {
     setSave(result.save);
     if (successMessage) setToast(successMessage);
     return true;
+  }, []);
+
+  const acceptCommittedSave = useCallback((next: PlayerSave, successMessage?: string) => {
+    setSave(next);
+    if (successMessage) setToast(successMessage);
   }, []);
 
   const handleAdvanceDay = () => {
@@ -221,10 +231,23 @@ export default function Home() {
     window.location.reload();
   };
 
+  const debugAddMaterial = (materialID: typeof EARTH_BASIC_MATERIAL | typeof EARTH_STAR_CORE, amount: number) => {
+    const result = InventoryService.addMaterial(save, materialID, amount);
+    if (!result.ok) setToast(`DEBUG ERROR · ${result.error}`);
+    else persist(result.save, `DEBUG · ${materialID} +${amount}`);
+  };
+
+  const debugSetTower = (level: number, stars: number) => {
+    if (!save.ownedTowers[0]) return setToast('DEBUG · 尚無炮台');
+    const ownedTowers = [...save.ownedTowers];
+    ownedTowers[0] = { ...ownedTowers[0], level, stars };
+    persist({ ...save, ownedTowers }, `DEBUG · TOWER Lv.${level} ${stars}★`);
+  };
+
   if (!mounted) return <main className="loading-screen"><Sparkles /><span>LOADING PLAYER SAVE...</span></main>;
 
-  if (stage === 'tower') return <TowerScreen save={save} onBack={() => setStage('menu')} onBattle={() => canEnterTutorial(save) || save.earthTutorialCleared ? setStage('battle') : setToast('完成五日準備後即可進入新手試煉')} />;
-  if (stage === 'battle') return <BattleScreen save={save} debugMode={debugMode} onBack={() => setStage('menu')} onSave={(next, message) => persist(next, message)} />;
+  if (stage === 'tower') return <TowerScreen save={save} onBack={() => setStage('menu')} onBattle={() => canEnterTutorial(save) || save.earthTutorialCleared ? setStage('battle') : setToast('完成五日準備後即可進入新手試煉')} onCommitted={acceptCommittedSave} />;
+  if (stage === 'battle') return <BattleScreen save={save} debugMode={debugMode} onBack={() => setStage('menu')} onCommitted={acceptCommittedSave} />;
 
   return (
     <main className={`game-shell ${career ? 'is-awakened' : ''}`}>
@@ -240,7 +263,7 @@ export default function Home() {
           <div className="status-tag"><i /> {save.earthTutorialCleared ? '已通關' : career ? '已覺醒' : '可覺醒'}</div>
         </section>
         <section className="resources" aria-label="資源">
-          <span><Gem /> {save.materials.toLocaleString()}</span><span><Hexagon /> {save.currency.toLocaleString()}</span>
+          <span title="地源碎片"><Gem /> {InventoryService.getAmount(save, EARTH_BASIC_MATERIAL).toLocaleString()}</span><span title="地源星核"><Sparkles /> {InventoryService.getAmount(save, EARTH_STAR_CORE).toLocaleString()}</span><span><Hexagon /> {save.currency.toLocaleString()}</span>
           <button className="icon-button" aria-label="信箱" onClick={() => setToast('沒有新的異界通訊')}><Mail /></button>
           <button className="icon-button" aria-label="設定" onClick={() => setToast('音效：開啟 · 動畫品質：高')}><Settings /></button>
         </section>
@@ -267,24 +290,24 @@ export default function Home() {
           {career && save.preparationDay < 5 && <button className="day-button" onClick={handleAdvanceDay}>完成今日準備 <ChevronRight /></button>}
         </section>
         <section className="quest-card cut-panel">
-          <p className="eyebrow">MAIN QUEST <b>主線任務</b></p><h2>{save.earthTutorialCleared ? '地球篇章已開啟' : career ? (save.preparationDay >= 5 ? '挑戰 25 波新手試煉' : '完成五日副本準備') : '完成覺醒儀式'}</h2>
-          <p>{save.earthTutorialCleared ? '教學防線已穩定，地球進度永久解鎖。' : career ? (save.preparationDay >= 5 ? '部署炮台，守住基地核心並擊破五名頭目。' : '完成準備後，帶領大地自動炮台進入裂隙。') : '踏入異界裂隙，接受地球的永久職業選擇。'}</p>
+          <p className="eyebrow">MAIN QUEST <b>主線任務</b></p><h2>{save.earthTutorialCleared ? (!save.firstGrowthUpgradeCompleted && growthAvailable ? '可強化炮台' : '地球成長循環已開啟') : career ? (save.preparationDay >= 5 ? '挑戰 25 波新手試煉' : '完成五日副本準備') : '完成覺醒儀式'}</h2>
+          <p>{save.earthTutorialCleared ? (!save.firstGrowthUpgradeCompleted && growthAvailable ? '首通素材已到位，前往炮台管理完成第一次強化。' : '重複挑戰副本取得素材，持續提升炮台戰力。') : career ? (save.preparationDay >= 5 ? '部署炮台，守住基地核心並擊破五名頭目。' : '完成準備後，帶領大地自動炮台進入裂隙。') : '踏入異界裂隙，接受地球的永久職業選擇。'}</p>
           <div className="quest-progress"><span style={{ width: `${save.earthTutorialCleared ? 100 : career ? save.preparationDay * 20 : 0}%` }} /><b>{save.earthTutorialCleared ? 'CLEAR' : career ? `${save.preparationDay} / 5` : '0 / 1'}</b></div>
-          {career && (save.preparationDay >= 5 || save.earthTutorialCleared) && <button className="quest-cta" onClick={() => setStage('battle')}>{save.earthTutorialCleared ? '再次挑戰' : '進入副本'} <ChevronRight /></button>}
+          {career && (save.preparationDay >= 5 || save.earthTutorialCleared) && <button className="quest-cta" onClick={() => save.earthTutorialCleared && !save.firstGrowthUpgradeCompleted && growthAvailable ? setStage('tower') : setStage('battle')}>{save.earthTutorialCleared && !save.firstGrowthUpgradeCompleted && growthAvailable ? '前往強化' : save.earthTutorialCleared ? '再次挑戰' : '進入副本'} <ChevronRight /></button>}
         </section>
       </aside>
 
       <nav className="bottom-nav" aria-label="主要導覽">
-        {NAV_ITEMS.map((item, index) => { const Icon = item.icon; const locked = !career || !item.unlocked; return <button key={item.en} className={index === 4 ? 'active' : ''} onClick={() => handleNav(index)}><Icon /><span>{item.zh}<small>{item.en}</small></span>{locked && index !== 4 && <em><LockKeyhole /> LOCK</em>}</button>; })}
+        {NAV_ITEMS.map((item, index) => { const Icon = item.icon; const locked = !career || !item.unlocked; return <button key={item.en} className={index === 4 ? 'active' : ''} onClick={() => handleNav(index)}><Icon /><span>{item.zh}<small>{item.en}</small></span>{index === 1 && growthAvailable && <i className="upgrade-dot">UP</i>}{locked && index !== 4 && <em><LockKeyhole /> LOCK</em>}</button>; })}
       </nav>
       <div className="system-line"><span /> GAME STATE <b>{save.currentGameState}</b></div>
       {toast && <output className="toast" aria-live="polite"><CircleDot /> {toast}</output>}
 
       {debugMode && (
         <aside className="debug-panel" aria-label="開發者工具">
-          <p><Code2 /> DEV · PHASE 3 + 4</p>
+          <p><Code2 /> DEV · PHASE 5</p>
           <dl><div><dt>STATE</dt><dd>{save.currentGameState}</dd></div><div><dt>DAY</dt><dd>{save.preparationDay}/5</dd></div><div><dt>EARTH RNG</dt><dd>{save.earthCareerRngUsed ? 'USED' : 'READY'}</dd></div><div><dt>CAREER</dt><dd>{save.earthCareer ?? 'NONE'}</dd></div><div><dt>DEF MULTI</dt><dd>{getDefenseMultiplier(save).toFixed(2)}×</dd></div></dl>
-          <div className="debug-actions"><button onClick={handleAdvanceDay}>+ DAY</button><button onClick={debugUnlock}>TUTORIAL READY</button><button onClick={debugDuplicateRoll}>DUPLICATE TEST</button><button onClick={debugRecovery}>RELOAD RECOVERY</button><button onClick={() => setStage('tower')}>TOWER UI</button><button onClick={() => setStage('battle')}>BATTLE UI</button><button className="danger" onClick={debugReset}><RotateCcw /> RESET SAVE</button></div>
+          <div className="debug-actions"><button onClick={handleAdvanceDay}>+ DAY</button><button onClick={debugUnlock}>TUTORIAL READY</button><button onClick={() => debugAddMaterial(EARTH_BASIC_MATERIAL, 100)}>+100 BASIC</button><button onClick={() => debugAddMaterial(EARTH_BASIC_MATERIAL, 1000)}>+1000 BASIC</button><button onClick={() => debugAddMaterial(EARTH_STAR_CORE, 1)}>+1 STAR CORE</button><button onClick={() => debugAddMaterial(EARTH_STAR_CORE, 10)}>+10 CORES</button><button onClick={() => debugSetTower(1, 1)}>SET Lv1 1★</button><button onClick={() => debugSetTower(10, 5)}>SET Lv10 5★</button><button onClick={debugDuplicateRoll}>DUPLICATE TEST</button><button onClick={debugRecovery}>RELOAD RECOVERY</button><button onClick={() => setStage('tower')}>TOWER UI</button><button onClick={() => setStage('battle')}>BATTLE UI</button><button className="danger" onClick={debugReset}><RotateCcw /> RESET SAVE</button></div>
         </aside>
       )}
 

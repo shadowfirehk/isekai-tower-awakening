@@ -1,7 +1,7 @@
 import { isCareerId } from './careers';
 import { CareerId, GameState, OwnedTowerProgress, PlayerSave, TowerId } from './types';
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 export const SAVE_KEY = 'rng-isekai-tower-player-save';
 const LEGACY_SAVE_KEY = 'rng-isekai-tower-save-v1';
 const LEGACY_PENDING_KEY = 'rng-isekai-tower-pending-v1';
@@ -34,6 +34,8 @@ export function createNewSave(now = new Date().toISOString()): PlayerSave {
     earthTutorialCleared: false,
     tutorialFirstClearRewardClaimed: false,
     tutorialClearCount: 0,
+    committedBattleRewardSessionIds: [],
+    firstGrowthUpgradeCompleted: false,
     saveCreatedAt: now,
     lastSaveAt: now,
   };
@@ -82,6 +84,14 @@ function normalizeSave(input: Partial<PlayerSave>): PlayerSave {
   }
   const tutorialFirstClearRewardClaimed = Boolean(input.tutorialFirstClearRewardClaimed);
   const earthTutorialCleared = Boolean(input.earthTutorialCleared || tutorialFirstClearRewardClaimed);
+  const rawInventory = input.materialsById && typeof input.materialsById === 'object' ? input.materialsById as Record<string, number> : {};
+  let basicMaterial = Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, Math.floor(Number(rawInventory.EARTH_BASIC_MATERIAL ?? input.materials ?? 0))));
+  let starCore = Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, Math.floor(Number(rawInventory.EARTH_STAR_CORE ?? 0))));
+  if (oldVersion < SAVE_VERSION && tutorialFirstClearRewardClaimed) {
+    basicMaterial = Math.max(150, basicMaterial);
+    starCore = Math.max(1, starCore);
+  }
+  const materialsById = { EARTH_BASIC_MATERIAL: basicMaterial, EARTH_STAR_CORE: starCore };
   let currentGameState = GameState.AwakeningAvailable;
   if (earthTutorialCleared) currentGameState = GameState.EarthProgress;
   else if (earthCareer && !acknowledged) currentGameState = GameState.CareerObtained;
@@ -106,8 +116,8 @@ function normalizeSave(input: Partial<PlayerSave>): PlayerSave {
     universeCareerRngUsed: Boolean(input.universeCareerRngUsed),
     starterTowerRewardClaimed,
     ownedTowers,
-    materials: Math.max(0, Number(input.materials ?? 0)),
-    materialsById: input.materialsById && typeof input.materialsById === 'object' ? input.materialsById as Record<string, number> : {},
+    materials: basicMaterial,
+    materialsById,
     currency: Math.max(0, Number(input.currency ?? 18200)),
     earthProgress: Math.max(0, Number(input.earthProgress ?? 0)),
     galaxyProgress: Math.max(0, Number(input.galaxyProgress ?? 0)),
@@ -115,6 +125,10 @@ function normalizeSave(input: Partial<PlayerSave>): PlayerSave {
     earthTutorialCleared,
     tutorialFirstClearRewardClaimed,
     tutorialClearCount: Math.max(0, Math.floor(Number(input.tutorialClearCount ?? (earthTutorialCleared ? 1 : 0)))),
+    committedBattleRewardSessionIds: Array.isArray(input.committedBattleRewardSessionIds)
+      ? input.committedBattleRewardSessionIds.filter((id): id is string => typeof id === 'string').slice(-50)
+      : [],
+    firstGrowthUpgradeCompleted: Boolean(input.firstGrowthUpgradeCompleted || ownedTowers.some(tower => tower.level > 1 || tower.stars > 1)),
     saveCreatedAt: typeof input.saveCreatedAt === 'string' ? input.saveCreatedAt : base.saveCreatedAt,
     lastSaveAt: typeof input.lastSaveAt === 'string' ? input.lastSaveAt : base.lastSaveAt,
   };
@@ -140,13 +154,13 @@ export const SaveManager = {
       const migrated = migrateLegacy();
       const save = migrated ?? createNewSave();
       this.save(save);
-      return { save, warning: migrated ? '已將舊版存檔升級至 Phase 4。' : undefined };
+      return { save, warning: migrated ? '已將舊版存檔升級至 Phase 5。' : undefined };
     }
     try {
       const parsed = JSON.parse(raw) as Partial<PlayerSave> & Record<string, unknown>;
       const save = normalizeSave(parsed);
       if (Number(parsed.saveVersion) !== SAVE_VERSION) this.save(save);
-      return { save, warning: Number(parsed.saveVersion) !== SAVE_VERSION ? '永久存檔已安全升級至 Phase 4。' : undefined };
+      return { save, warning: Number(parsed.saveVersion) !== SAVE_VERSION ? '永久存檔已安全升級至 Phase 5，已補發成長素材。' : undefined };
     } catch (error) {
       console.error('[SaveManager] Corrupted save data. A safe new save was created.', error);
       const save = createNewSave();

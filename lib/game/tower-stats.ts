@@ -1,14 +1,15 @@
 import { getCareerModifiers } from './passives';
+import { PROGRESSION_CONFIG } from './progression-config';
 import { FinalTowerStats, OwnedTowerProgress, PlayerSave, TowerData } from './types';
 
-export const MAX_TOWER_STARS = 5;
+export const MAX_TOWER_STARS = PROGRESSION_CONFIG.maxTowerStars;
 
 export function levelMultiplier(level: number) {
-  return 1 + (Math.max(1, level) - 1) * 0.05;
+  return 1 + (Math.max(1, level) - 1) * PROGRESSION_CONFIG.levelScalingPerLevel;
 }
 
 export function starMultiplier(stars: number) {
-  return 1 + (Math.min(MAX_TOWER_STARS, Math.max(1, stars)) - 1) * 0.25;
+  return 1 + (Math.min(MAX_TOWER_STARS, Math.max(1, stars)) - 1) * PROGRESSION_CONFIG.starScalingPerStar;
 }
 
 export function calculateTowerStats(data: TowerData, progress: OwnedTowerProgress, save: PlayerSave): FinalTowerStats {

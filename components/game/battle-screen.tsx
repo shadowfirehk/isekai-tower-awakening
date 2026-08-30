@@ -4,14 +4,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Crosshair, FastForward, HeartPulse, Pause, Play, RotateCcw, Shield, Sparkles, Swords, TowerControl } from 'lucide-react';
 import { BattleEngine, BattleSnapshot } from '@/lib/game/battle-engine';
 import { EARTH_TUTORIAL_DUNGEON } from '@/lib/game/dungeon-data';
-import { applyTutorialVictory } from '@/lib/game/tutorial-progress';
-import { PlayerSave, TargetingMode } from '@/lib/game/types';
+import { getMaterialData } from '@/lib/game/materials';
+import { RewardService } from '@/lib/game/reward-service';
+import { MaterialReward, PlayerSave, TargetingMode } from '@/lib/game/types';
 
 interface BattleScreenProps {
   save: PlayerSave;
   debugMode: boolean;
   onBack: () => void;
-  onSave: (save: PlayerSave, message?: string) => void;
+  onCommitted: (save: PlayerSave, message?: string) => void;
 }
 
 function pathPoint(progress: number) {
@@ -24,12 +25,19 @@ function pathPoint(progress: number) {
 
 const SLOT_POINTS = [{ x: 23, y: 59 }, { x: 43, y: 48 }, { x: 59, y: 42 }, { x: 79, y: 48 }];
 
-export function BattleScreen({ save, debugMode, onBack, onSave }: BattleScreenProps) {
+function createBattleSessionID() {
+  return `earth-tutorial-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+export function BattleScreen({ save, debugMode, onBack, onCommitted }: BattleScreenProps) {
   const [initialEngine] = useState(() => new BattleEngine(save));
   const engineRef = useRef(initialEngine);
   const [snapshot, setSnapshot] = useState<BattleSnapshot>(() => initialEngine.snapshot());
   const [selectedTower, setSelectedTower] = useState<number | null>(null);
-  const [rewardGranted, setRewardGranted] = useState(false);
+  const [battleSessionID, setBattleSessionID] = useState(createBattleSessionID);
+  const [rewardMaterials, setRewardMaterials] = useState<MaterialReward[]>([]);
+  const [firstClearReward, setFirstClearReward] = useState(false);
+  const [rewardError, setRewardError] = useState('');
   const resultCommitted = useRef(false);
 
   const sync = useCallback(() => setSnapshot(engineRef.current.snapshot()), []);
@@ -51,10 +59,18 @@ export function BattleScreen({ save, debugMode, onBack, onSave }: BattleScreenPr
   useEffect(() => {
     if (snapshot.state !== 'VICTORY' || resultCommitted.current) return;
     resultCommitted.current = true;
-    const result = applyTutorialVictory(save);
-    setRewardGranted(result.rewardGranted);
-    onSave(result.save, result.rewardGranted ? '首通獎勵已永久保存 · 大地素材 +100' : '教學副本通關紀錄已保存');
-  }, [snapshot.state, save, onSave]);
+    const commit = window.setTimeout(() => {
+      const result = RewardService.commitTutorialVictory(save, battleSessionID);
+      if (!result.ok) {
+        setRewardError(result.message);
+        return;
+      }
+      setRewardMaterials(result.reward.materials);
+      setFirstClearReward(result.reward.firstClear);
+      onCommitted(result.save, result.reward.firstClear ? '首通成長素材已永久保存' : '重複通關素材已永久保存');
+    }, 0);
+    return () => window.clearTimeout(commit);
+  }, [snapshot.state, save, battleSessionID, onCommitted]);
 
   const deploy = (slot: number) => {
     const result = engineRef.current.deploy(slot);
@@ -65,7 +81,10 @@ export function BattleScreen({ save, debugMode, onBack, onSave }: BattleScreenPr
   const restart = () => {
     engineRef.current = new BattleEngine(save);
     resultCommitted.current = false;
-    setRewardGranted(false);
+    setBattleSessionID(createBattleSessionID());
+    setRewardMaterials([]);
+    setFirstClearReward(false);
+    setRewardError('');
     setSelectedTower(null);
     sync();
   };
@@ -103,7 +122,7 @@ export function BattleScreen({ save, debugMode, onBack, onSave }: BattleScreenPr
       <aside className="deployment-panel">
         <p><TowerControl /> DEPLOYMENT · {snapshot.deployed.length} / {EARTH_TUTORIAL_DUNGEON.deploymentCap}</p>
         <button className="tower-chip" onClick={() => deploy(SLOT_POINTS.findIndex((_, i) => !snapshot.deployed.some(t => t.slot === i)))} disabled={snapshot.deployed.length >= EARTH_TUTORIAL_DUNGEON.deploymentCap}>
-          <span className="mini-tower"><i /></span><span><b>大地自動炮塔</b><small>NORMAL · Lv.1 · FIRST</small></span><em>× ∞</em>
+          <span className="mini-tower"><i /></span><span><b>大地自動炮塔</b><small>NORMAL · Lv.{save.ownedTowers[0]?.level ?? 1} · {save.ownedTowers[0]?.stars ?? 1}★</small></span><em>× ∞</em>
         </button>
         {selected ? <div className="selected-tower"><p><Crosshair /> TOWER #{selected.runtimeId}</p><div><span>ATK <b>{Math.round(selected.stats.attack)}</b></span><span>RANGE <b>{selected.stats.range.toFixed(1)}</b></span><span>SHOTS <b>{selected.shots}</b></span></div><label>鎖定方式<select value={selected.targetingMode} onChange={event => { engineRef.current.setTargeting(selected.runtimeId, event.target.value as TargetingMode); sync(); }}><option value="FIRST">FIRST · 路徑最前</option><option value="NEAREST">NEAREST · 物理最近</option></select></label></div> : <p className="deployment-help">點擊空部署槽放置炮塔；同一永久塔型可建立多個戰鬥實例。</p>}
       </aside>
@@ -116,7 +135,7 @@ export function BattleScreen({ save, debugMode, onBack, onSave }: BattleScreenPr
       {debugMode && <aside className="battle-debug"><p>DEV BATTLE</p><div>{[1,5,10,15,20,25].map(wave => <button key={wave} onClick={() => { engineRef.current.debugJump(wave); sync(); }}>W{wave}</button>)}<button onClick={() => { engineRef.current.debugKillAll(); sync(); }}>KILL ALL</button><button onClick={() => { engineRef.current.debugSetBaseHP(20); sync(); }}>HP 20</button><button onClick={() => { engineRef.current.debugForceVictory(); sync(); }}>VICTORY</button><button onClick={() => { engineRef.current.debugForceDefeat(); sync(); }}>DEFEAT</button></div></aside>}
 
       {terminal && <div className={`battle-result ${snapshot.state === 'VICTORY' ? 'victory' : 'defeat'}`}>
-        <div><Sparkles /><small>{snapshot.state === 'VICTORY' ? 'TUTORIAL COMPLETE' : 'CORE LOST'}</small><h2>{snapshot.state === 'VICTORY' ? '新手試煉完成' : '防衛失敗'}</h2><p>{snapshot.state === 'VICTORY' ? (rewardGranted ? '首次通關獎勵：大地基礎素材 ×100（已永久保存）' : '重複通關完成，首次獎勵不會重複發放。') : '調整部署位置與鎖定方式，再次建立防線。'}</p><div className="result-stats"><span>WAVE <b>{snapshot.wave}</b></span><span>KILLS <b>{snapshot.totalKills}</b></span><span>DAMAGE <b>{Math.round(snapshot.totalDamage).toLocaleString()}</b></span></div><div className="result-actions"><button onClick={onBack}><ArrowLeft /> 返回主畫面</button><button className="primary-action" onClick={restart}><RotateCcw /> {snapshot.state === 'VICTORY' ? '再次挑戰' : '重新挑戰'}</button></div></div>
+        <div><Sparkles /><small>{snapshot.state === 'VICTORY' ? 'TUTORIAL COMPLETE' : 'CORE LOST'}</small><h2>{snapshot.state === 'VICTORY' ? '新手試煉完成' : '防衛失敗'}</h2><p>{snapshot.state === 'VICTORY' ? (rewardError || (firstClearReward ? '首次通關：標準獎勵與首通加成已永久保存。' : '標準重複通關獎勵已永久保存。')) : '調整部署位置與鎖定方式，再次建立防線。'}</p>{snapshot.state === 'VICTORY' && rewardMaterials.length > 0 && <div className="reward-list">{rewardMaterials.map((reward, index) => <span key={`${reward.materialID}-${index}`}><small>{getMaterialData(reward.materialID).rarity}</small><b>{getMaterialData(reward.materialID).displayName}</b><em>+{reward.amount}</em></span>)}</div>}<div className="result-stats"><span>WAVE <b>{snapshot.wave}</b></span><span>KILLS <b>{snapshot.totalKills}</b></span><span>DAMAGE <b>{Math.round(snapshot.totalDamage).toLocaleString()}</b></span></div><div className="result-actions"><button onClick={onBack}><ArrowLeft /> 返回主畫面</button><button className="primary-action" onClick={restart}><RotateCcw /> {snapshot.state === 'VICTORY' ? '再次挑戰' : '重新挑戰'}</button></div></div>
       </div>}
     </section>
   );
