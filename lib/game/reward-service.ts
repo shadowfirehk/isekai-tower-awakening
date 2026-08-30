@@ -36,6 +36,13 @@ export const RewardService = {
       tutorialClearCount: save.tutorialClearCount + 1,
       earthProgress: Math.max(1, save.earthProgress),
       committedBattleRewardSessionIds: [...save.committedBattleRewardSessionIds, battleSessionID].slice(-50),
+      earthRegion: {
+        ...save.earthRegion,
+        tutorialCleared:true,
+        highestUnlockedTier:save.earthRegion.highestUnlockedTier ?? 'NORMAL',
+        tierProgress:{...save.earthRegion.tierProgress,NORMAL:{...save.earthRegion.tierProgress.NORMAL,unlocked:true}},
+      },
+      earthLoadout:save.earthLoadout.length ? save.earthLoadout : save.ownedTowers.slice(0,1).map(tower=>tower.towerID),
     };
     const saved = persist(next);
     if (!saved.ok) return { ok: false, error: 'SAVE_FAILED', message: saved.error };

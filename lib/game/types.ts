@@ -26,9 +26,46 @@ export type CareerId =
   | 'GALAXY_STARBURST_HUNTER'
   | 'UNIVERSE_CHAOS_LAW_MASTER';
 
-export type TowerId = 'EARTH_BASIC_AUTO_TURRET';
-export type MaterialId = 'EARTH_BASIC_MATERIAL' | 'EARTH_STAR_CORE';
-export type EnemyId = 'EARTH_GRUNT' | 'EARTH_RUNNER' | 'EARTH_TANK' | 'EARTH_BOSS';
+export const EARTH_TIER_IDS = ['NORMAL', 'RARE', 'SCARCE', 'EPIC', 'LEGENDARY', 'MYTHIC', 'SECRET', 'KING', 'EMPEROR', 'VENERABLE', 'SAINT', 'SOVEREIGN'] as const;
+export type EarthTierId = typeof EARTH_TIER_IDS[number];
+
+export type TowerId =
+  | 'EARTH_BASIC_AUTO_TURRET'
+  | 'EARTH_RAPID_FIRE_TURRET'
+  | 'EARTH_ARMOR_PIERCING_TURRET'
+  | 'EARTH_BLAST_TURRET'
+  | 'EARTH_THUNDER_TURRET'
+  | 'EARTH_DIVINE_JUDGMENT_TURRET'
+  | 'EARTH_PHANTOM_TURRET'
+  | 'EARTH_KING_AUTHORITY_TURRET'
+  | 'EARTH_EMPEROR_ANNIHILATION_TURRET'
+  | 'EARTH_VENERABLE_TURRET'
+  | 'EARTH_SAINT_DOMAIN_TURRET'
+  | 'EARTH_SOVEREIGN_END_TURRET';
+export type MaterialId =
+  | 'EARTH_BASIC_MATERIAL'
+  | 'EARTH_NORMAL_MATERIAL'
+  | 'EARTH_RARE_MATERIAL'
+  | 'EARTH_SCARCE_MATERIAL'
+  | 'EARTH_EPIC_MATERIAL'
+  | 'EARTH_LEGENDARY_MATERIAL'
+  | 'EARTH_MYTHIC_MATERIAL'
+  | 'EARTH_SECRET_MATERIAL'
+  | 'EARTH_KING_MATERIAL'
+  | 'EARTH_EMPEROR_MATERIAL'
+  | 'EARTH_VENERABLE_MATERIAL'
+  | 'EARTH_SAINT_MATERIAL'
+  | 'EARTH_SOVEREIGN_MATERIAL'
+  | 'EARTH_STAR_CORE';
+export type EnemyId =
+  | 'EARTH_GRUNT'
+  | 'EARTH_RUNNER'
+  | 'EARTH_TANK'
+  | 'EARTH_ELITE'
+  | 'EARTH_SHIELDED'
+  | 'EARTH_REGENERATOR'
+  | 'EARTH_SUPPORT'
+  | 'EARTH_BOSS';
 export type TargetingMode = 'FIRST' | 'NEAREST' | 'LAST' | 'FARTHEST' | 'STRONGEST' | 'WEAKEST';
 export type BattleState =
   | 'SETUP'
@@ -75,6 +112,28 @@ export interface OwnedTowerProgress {
   obtainedAt: string;
 }
 
+export interface EarthTierProgress {
+  unlocked: boolean;
+  cleared: boolean;
+  clearCount: number;
+  bestWave: number;
+  bossDefeated: boolean;
+  firstClearRewardClaimed: boolean;
+  milestoneRewardsClaimed: string[];
+  tierTowerRewardClaimed: boolean;
+}
+
+export interface EarthProgressData {
+  highestUnlockedTier: EarthTierId | null;
+  highestClearedTier: EarthTierId | null;
+  totalEarthPower: number;
+  tutorialCleared: boolean;
+  tierProgress: Record<EarthTierId, EarthTierProgress>;
+  earthCompleted: boolean;
+  earthCompletionRewardClaimed: boolean;
+  completionBadge: string | null;
+}
+
 export interface PlayerSave {
   saveVersion: number;
   playerLevel: number;
@@ -103,6 +162,8 @@ export interface PlayerSave {
   tutorialClearCount: number;
   committedBattleRewardSessionIds: string[];
   firstGrowthUpgradeCompleted: boolean;
+  earthRegion: EarthProgressData;
+  earthLoadout: TowerId[];
   saveCreatedAt: string;
   lastSaveAt: string;
 }
@@ -135,10 +196,15 @@ export interface TowerData {
   name: string;
   englishName: string;
   realm: RealmType;
-  rarity: 'NORMAL';
+  rarity: EarthTierId;
+  tierID: EarthTierId;
   description: string;
   baseStats: TowerBaseStats;
   scaleAttackSpeedWithStars: boolean;
+  roleTags: string[];
+  attackPattern: 'SINGLE' | 'AOE' | 'CHAIN';
+  maxTargets: number;
+  bossDamageMultiplier: number;
 }
 
 export interface FinalTowerStats extends TowerBaseStats {
@@ -155,6 +221,11 @@ export interface EnemyData {
   baseDamage: number;
   reward: number;
   boss: boolean;
+  archetype: 'GRUNT' | 'RUNNER' | 'TANK' | 'ELITE' | 'SHIELDED' | 'REGENERATING' | 'SUPPORT' | 'BOSS';
+  shieldPercent?: number;
+  regenerationPercent?: number;
+  elite?: boolean;
+  supportAura?: number;
 }
 
 export interface MaterialData {

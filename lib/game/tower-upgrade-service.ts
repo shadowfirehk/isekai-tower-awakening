@@ -36,19 +36,28 @@ function getContext(save: PlayerSave, towerID: TowerId) {
   return { index, progress, data };
 }
 
-function getLevelCosts(progress: OwnedTowerProgress): MaterialReward[] | null {
-  const amount = PROGRESSION_CONFIG.levelCosts.NORMAL[progress.level - 1];
-  return Number.isSafeInteger(amount) ? [{ materialID: 'EARTH_BASIC_MATERIAL', amount }] : null;
+function getTierMaterial(save:PlayerSave,towerID:TowerId) {
+  const data=getTowerById(towerID);
+  const tierMaterial=`EARTH_${data?.tierID ?? 'NORMAL'}_MATERIAL` as MaterialReward['materialID'];
+  if (towerID==='EARTH_BASIC_AUTO_TURRET' && InventoryService.getAmount(save,'EARTH_BASIC_MATERIAL')>0) return 'EARTH_BASIC_MATERIAL' as const;
+  return tierMaterial;
 }
 
-function getStarCosts(progress: OwnedTowerProgress): MaterialReward[] | null {
-  return PROGRESSION_CONFIG.starCosts.NORMAL[progress.stars - 1] ?? null;
+function getLevelCosts(save:PlayerSave,progress: OwnedTowerProgress): MaterialReward[] | null {
+  const amount = PROGRESSION_CONFIG.levelCosts.NORMAL[progress.level - 1];
+  return Number.isSafeInteger(amount) ? [{ materialID: getTierMaterial(save,progress.towerID), amount }] : null;
+}
+
+function getStarCosts(save:PlayerSave,progress: OwnedTowerProgress): MaterialReward[] | null {
+  const base=PROGRESSION_CONFIG.starCosts.NORMAL[progress.stars - 1];
+  if (!base) return null;
+  return base.map(cost=>cost.materialID==='EARTH_BASIC_MATERIAL'?{...cost,materialID:getTierMaterial(save,progress.towerID)}:cost);
 }
 
 function makePreview(save: PlayerSave, towerID: TowerId, kind: 'LEVEL' | 'STAR'): UpgradePreview | null {
   const { progress, data } = getContext(save, towerID);
   if (!progress || !data) return null;
-  const costs = kind === 'LEVEL' ? getLevelCosts(progress) : getStarCosts(progress);
+  const costs = kind === 'LEVEL' ? getLevelCosts(save,progress) : getStarCosts(save,progress);
   if (!costs) return null;
   const projected = { ...progress, [kind === 'LEVEL' ? 'level' : 'stars']: (kind === 'LEVEL' ? progress.level : progress.stars) + 1 };
   return {
@@ -68,12 +77,12 @@ function failure(reason: UpgradeFailureReason, message: string): UpgradeResult {
 export const TowerUpgradeService = {
   getLevelUpgradeCost(save: PlayerSave, towerID: TowerId) {
     const progress = getContext(save, towerID).progress;
-    return progress ? getLevelCosts(progress) : null;
+    return progress ? getLevelCosts(save,progress) : null;
   },
 
   getStarUpgradeCost(save: PlayerSave, towerID: TowerId) {
     const progress = getContext(save, towerID).progress;
-    return progress ? getStarCosts(progress) : null;
+    return progress ? getStarCosts(save,progress) : null;
   },
 
   generateUpgradePreview(save: PlayerSave, towerID: TowerId, kind: 'LEVEL' | 'STAR') {
@@ -85,7 +94,7 @@ export const TowerUpgradeService = {
     if (!progress) return { ok: false as const, reason: 'TOWER_NOT_OWNED' as const };
     if (!data) return { ok: false as const, reason: 'INVALID_TOWER_DATA' as const };
     if (progress.level >= PROGRESSION_CONFIG.maxTowerLevel) return { ok: false as const, reason: 'MAX_LEVEL' as const };
-    const costs = getLevelCosts(progress);
+    const costs = getLevelCosts(save,progress);
     if (!costs) return { ok: false as const, reason: 'INVALID_UPGRADE_CONFIG' as const };
     if (costs.some(cost => !InventoryService.hasMaterial(save, cost.materialID, cost.amount))) return { ok: false as const, reason: 'INSUFFICIENT_MATERIAL' as const };
     return { ok: true as const };
@@ -96,7 +105,7 @@ export const TowerUpgradeService = {
     if (!progress) return { ok: false as const, reason: 'TOWER_NOT_OWNED' as const };
     if (!data) return { ok: false as const, reason: 'INVALID_TOWER_DATA' as const };
     if (progress.stars >= PROGRESSION_CONFIG.maxTowerStars) return { ok: false as const, reason: 'MAX_STAR' as const };
-    const costs = getStarCosts(progress);
+    const costs = getStarCosts(save,progress);
     if (!costs) return { ok: false as const, reason: 'INVALID_UPGRADE_CONFIG' as const };
     if (costs.some(cost => !InventoryService.hasMaterial(save, cost.materialID, cost.amount))) return { ok: false as const, reason: 'INSUFFICIENT_MATERIAL' as const };
     return { ok: true as const };
