@@ -21,15 +21,17 @@ import {
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BattleScreen } from '@/components/game/battle-screen';
+import { TowerScreen } from '@/components/game/tower-screen';
 import { AwakeningController } from '@/lib/game/awakening-controller';
 import { getCareerById } from '@/lib/game/careers';
 import { getCareerModifiers, getDefenseMultiplier } from '@/lib/game/passives';
-import { advancePreparation, canAwaken, PREPARATION_REQUIRED_DAYS, unlockAwakening } from '@/lib/game/progression';
+import { advancePreparation, canAwaken, canEnterTutorial, PREPARATION_REQUIRED_DAYS } from '@/lib/game/progression';
 import { RNGManager } from '@/lib/game/rng-manager';
 import { createNewSave, SaveManager } from '@/lib/game/save-manager';
 import { GameState, PlayerSave, RealmType } from '@/lib/game/types';
 
-type Stage = 'menu' | 'preparation' | 'charging' | 'candidates' | 'reveal' | 'career';
+type Stage = 'menu' | 'preparation' | 'charging' | 'candidates' | 'reveal' | 'career' | 'tower' | 'battle';
 
 const NAV_ITEMS = [
   { zh: '戰鬥', en: 'BATTLE', icon: Swords, unlocked: true },
@@ -124,7 +126,7 @@ export default function Home() {
   const handleAdvanceDay = () => {
     playTone('click');
     const next = advancePreparation(save);
-    persist(next, next.awakeningUnlocked ? 'DAY 05 完成 · 覺醒儀式已解鎖' : `準備進度推進至 DAY ${String(next.preparationDay).padStart(2, '0')}`);
+    persist(next, next.preparationDay >= PREPARATION_REQUIRED_DAYS ? 'DAY 05 完成 · 新手試煉已解鎖' : `副本準備推進至 DAY ${String(next.preparationDay).padStart(2, '0')}`);
   };
 
   const openAwakening = () => {
@@ -160,7 +162,7 @@ export default function Home() {
     }
     setSave(result.save);
     setStage('menu');
-    setToast('永久覺醒完成 · 壁壘意志已啟用');
+    setToast('永久覺醒完成 · 起始炮台已保存 · 準備 DAY 01');
     playTone('click');
   }, [save]);
 
@@ -172,12 +174,24 @@ export default function Home() {
       else openAwakening();
       return;
     }
+    if (index === 1 && career) {
+      setStage('tower');
+      return;
+    }
+    if (index === 0 && career) {
+      if (!canEnterTutorial(save) && !save.earthTutorialCleared) {
+        setToast(`新手試煉尚未開放 · 準備 DAY ${save.preparationDay} / 05`);
+        return;
+      }
+      setStage('battle');
+      return;
+    }
     if (!career) {
       setToast(`${item.zh}尚未解鎖 · 請先完成職業覺醒`);
       return;
     }
     if (!item.unlocked) setToast(`${item.zh}將於後續世界進度開放`);
-    else setToast(`${item.zh}入口已連線 · Phase 2 尚未實作戰鬥內容`);
+    else setToast(`${item.zh}入口已連線`);
   };
 
   const debugReset = () => {
@@ -187,7 +201,7 @@ export default function Home() {
     setToast('DEBUG · 本機存檔已重設');
   };
 
-  const debugUnlock = () => persist(unlockAwakening(save), 'DEBUG · 覺醒已解鎖');
+  const debugUnlock = () => persist({ ...save, preparationDay: 5, currentGameState: GameState.TutorialAvailable }, 'DEBUG · 新手試煉已解鎖');
 
   const debugDuplicateRoll = () => {
     const result = RNGManager.rollCareer(RealmType.Earth, save);
@@ -209,6 +223,9 @@ export default function Home() {
 
   if (!mounted) return <main className="loading-screen"><Sparkles /><span>LOADING PLAYER SAVE...</span></main>;
 
+  if (stage === 'tower') return <TowerScreen save={save} onBack={() => setStage('menu')} onBattle={() => canEnterTutorial(save) || save.earthTutorialCleared ? setStage('battle') : setToast('完成五日準備後即可進入新手試煉')} />;
+  if (stage === 'battle') return <BattleScreen save={save} debugMode={debugMode} onBack={() => setStage('menu')} onSave={(next, message) => persist(next, message)} />;
+
   return (
     <main className={`game-shell ${career ? 'is-awakened' : ''}`}>
       <div className="scene" aria-hidden="true" />
@@ -220,7 +237,7 @@ export default function Home() {
         <section className="player-card cut-panel" aria-label="玩家資訊">
           <div className="player-mark"><span>01</span></div>
           <div><p className="eyebrow">PLAYER</p><h1>PLAYER #0001</h1><p className="meta"><b>Lv.{save.playerLevel}</b><span>AGE {save.playerAge}</span></p></div>
-          <div className="status-tag"><i /> {career ? '已覺醒' : save.awakeningUnlocked ? '可覺醒' : '準備中'}</div>
+          <div className="status-tag"><i /> {save.earthTutorialCleared ? '已通關' : career ? '已覺醒' : '可覺醒'}</div>
         </section>
         <section className="resources" aria-label="資源">
           <span><Gem /> {save.materials.toLocaleString()}</span><span><Hexagon /> {save.currency.toLocaleString()}</span>
@@ -235,7 +252,7 @@ export default function Home() {
         <div className="panel-heading"><span>CAREER</span><small>{career ? '永久職業' : '覺醒狀態'}</small></div>
         <div className="career-empty">
           <div className="career-symbol">{career ? <ShieldCheck /> : <Shield />}</div>
-          <div><p>{career?.englishName ?? 'UNAWAKENED'}</p><h2>{career?.displayName ?? '職業未覺醒'}</h2><span>{career ? `${career.passiveName} · ACTIVE` : awakeningAvailable ? '命運迴路已準備完成' : `PREPARATION DAY ${String(save.preparationDay).padStart(2, '0')}`}</span></div>
+          <div><p>{career?.englishName ?? 'UNAWAKENED'}</p><h2>{career?.displayName ?? '職業未覺醒'}</h2><span>{career ? `${career.passiveName} · ACTIVE` : '17 歲覺醒已可進行'}</span></div>
         </div>
         <Button className="awaken-button" size="lg" onClick={openAwakening} aria-disabled={!career && !awakeningAvailable}>
           {career ? <ShieldCheck /> : awakeningAvailable ? <Sparkles /> : <LockKeyhole />}
@@ -246,13 +263,14 @@ export default function Home() {
       <aside className="mission-stack">
         <section className="prep-card cut-panel">
           <div className="radial"><b>{String(save.preparationDay).padStart(2, '0')}</b><span>/ 05</span></div>
-          <div className="prep-copy"><p className="eyebrow">PREPARATION</p><h2>{career ? '覺醒儀式完成' : awakeningAvailable ? '覺醒準備完成' : '17歲準備期'}</h2><span className="available">{career ? 'CAREER ACQUIRED' : awakeningAvailable ? 'AWAKENING AVAILABLE' : save.currentGameState}</span></div>
-          {!career && !awakeningAvailable && <button className="day-button" onClick={handleAdvanceDay}>完成今日準備 <ChevronRight /></button>}
+          <div className="prep-copy"><p className="eyebrow">DUNGEON PREPARATION</p><h2>{save.earthTutorialCleared ? '新手試煉已完成' : career ? (save.preparationDay >= 5 ? '副本準備完成' : '新手副本準備') : '等待職業覺醒'}</h2><span className="available">{save.earthTutorialCleared ? 'EARTH PROGRESS' : career ? save.currentGameState : 'AWAKENING AVAILABLE'}</span></div>
+          {career && save.preparationDay < 5 && <button className="day-button" onClick={handleAdvanceDay}>完成今日準備 <ChevronRight /></button>}
         </section>
         <section className="quest-card cut-panel">
-          <p className="eyebrow">MAIN QUEST <b>主線任務</b></p><h2>{career ? '前往新手副本' : awakeningAvailable ? '完成覺醒儀式' : '完成五日準備'}</h2>
-          <p>{career ? '壁壘守衛者，城市防衛線正在等待你。' : awakeningAvailable ? '踏入異界裂隙，接受地球的職業選擇。' : '完成遊戲內準備日，解鎖 17 歲覺醒。'}</p>
-          <div className="quest-progress"><span style={{ width: `${career ? 100 : save.preparationDay * 20}%` }} /><b>{career ? '1 / 1' : `${save.preparationDay} / 5`}</b></div>
+          <p className="eyebrow">MAIN QUEST <b>主線任務</b></p><h2>{save.earthTutorialCleared ? '地球篇章已開啟' : career ? (save.preparationDay >= 5 ? '挑戰 25 波新手試煉' : '完成五日副本準備') : '完成覺醒儀式'}</h2>
+          <p>{save.earthTutorialCleared ? '教學防線已穩定，地球進度永久解鎖。' : career ? (save.preparationDay >= 5 ? '部署炮台，守住基地核心並擊破五名頭目。' : '完成準備後，帶領大地自動炮台進入裂隙。') : '踏入異界裂隙，接受地球的永久職業選擇。'}</p>
+          <div className="quest-progress"><span style={{ width: `${save.earthTutorialCleared ? 100 : career ? save.preparationDay * 20 : 0}%` }} /><b>{save.earthTutorialCleared ? 'CLEAR' : career ? `${save.preparationDay} / 5` : '0 / 1'}</b></div>
+          {career && (save.preparationDay >= 5 || save.earthTutorialCleared) && <button className="quest-cta" onClick={() => setStage('battle')}>{save.earthTutorialCleared ? '再次挑戰' : '進入副本'} <ChevronRight /></button>}
         </section>
       </aside>
 
@@ -264,9 +282,9 @@ export default function Home() {
 
       {debugMode && (
         <aside className="debug-panel" aria-label="開發者工具">
-          <p><Code2 /> DEV · PHASE 2</p>
+          <p><Code2 /> DEV · PHASE 3 + 4</p>
           <dl><div><dt>STATE</dt><dd>{save.currentGameState}</dd></div><div><dt>DAY</dt><dd>{save.preparationDay}/5</dd></div><div><dt>EARTH RNG</dt><dd>{save.earthCareerRngUsed ? 'USED' : 'READY'}</dd></div><div><dt>CAREER</dt><dd>{save.earthCareer ?? 'NONE'}</dd></div><div><dt>DEF MULTI</dt><dd>{getDefenseMultiplier(save).toFixed(2)}×</dd></div></dl>
-          <div className="debug-actions"><button onClick={handleAdvanceDay}>+ DAY</button><button onClick={debugUnlock}>UNLOCK</button><button onClick={debugDuplicateRoll}>DUPLICATE TEST</button><button onClick={debugRecovery}>RELOAD RECOVERY</button><button onClick={() => setStage('career')}>CAREER UI</button><button className="danger" onClick={debugReset}><RotateCcw /> RESET SAVE</button></div>
+          <div className="debug-actions"><button onClick={handleAdvanceDay}>+ DAY</button><button onClick={debugUnlock}>TUTORIAL READY</button><button onClick={debugDuplicateRoll}>DUPLICATE TEST</button><button onClick={debugRecovery}>RELOAD RECOVERY</button><button onClick={() => setStage('tower')}>TOWER UI</button><button onClick={() => setStage('battle')}>BATTLE UI</button><button className="danger" onClick={debugReset}><RotateCcw /> RESET SAVE</button></div>
         </aside>
       )}
 
@@ -288,7 +306,7 @@ export default function Home() {
             <div className="career-detail">
               <div className="career-art-card"><div /><span>{career ? 'PERMANENT' : 'UNAWAKENED'}</span></div>
               <div className="career-data">
-                {career ? <><p className="eyebrow">{career.classification}</p><span className="english-name">{career.englishName}</span><h2>{career.displayName}</h2><p className="career-description">「{career.description}」</p><section><small>CAREER PASSIVE</small><h3>{career.passiveName}</h3><p>{career.passiveDescription}</p></section><section><small>ACTIVE STAT MODIFIERS</small>{modifiers.map(modifier => <p key={`${modifier.sourceId}-${modifier.type}`} className="modifier-row"><span>{modifier.type}</span><b>+{Math.round(modifier.value * 100)}%</b></p>)}</section><div className="career-status"><ShieldCheck /> STATUS · ACTIVE / EARTH RNG · PERMANENTLY USED</div></> : <><p className="eyebrow">EARTH CAREER</p><h2>尚未覺醒</h2><p className="career-description">完成五日準備後，進行唯一一次的地球職業覺醒。</p><Button className="awaken-button" onClick={openAwakening}>前往覺醒</Button></>}
+                {career ? <><p className="eyebrow">{career.classification}</p><span className="english-name">{career.englishName}</span><h2>{career.displayName}</h2><p className="career-description">「{career.description}」</p><section><small>CAREER PASSIVE</small><h3>{career.passiveName}</h3><p>{career.passiveDescription}</p></section><section><small>ACTIVE STAT MODIFIERS</small>{modifiers.map(modifier => <p key={`${modifier.sourceId}-${modifier.type}`} className="modifier-row"><span>{modifier.type}</span><b>+{Math.round(modifier.value * 100)}%</b></p>)}</section><div className="career-status"><ShieldCheck /> STATUS · ACTIVE / EARTH RNG · PERMANENTLY USED</div></> : <><p className="eyebrow">EARTH CAREER</p><h2>尚未覺醒</h2><p className="career-description">17 歲時可進行唯一一次的地球職業覺醒。</p><Button className="awaken-button" onClick={openAwakening}>前往覺醒</Button></>}
               </div>
             </div>
             <div className="locked-realms"><article><Globe2 /><div><small>REALM 02</small><h3>GALAXY</h3><p>星爆獵殺者資料已保留，玩法尚未開放。</p></div><LockKeyhole /></article><article><CircleDot /><div><small>REALM 03</small><h3>UNIVERSE</h3><p>混沌法則主宰資料已保留，玩法尚未開放。</p></div><LockKeyhole /></article></div>

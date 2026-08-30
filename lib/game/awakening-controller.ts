@@ -1,6 +1,7 @@
 import { canAwaken } from './progression';
 import { RNGManager } from './rng-manager';
 import { SaveManager } from './save-manager';
+import { grantStarterTower } from './towers';
 import { GameState, PlayerSave, RealmType } from './types';
 
 type AwakeningResult = { ok: true; save: PlayerSave } | { ok: false; error: string };
@@ -25,7 +26,13 @@ export const AwakeningController = {
 
   acknowledgeReveal(save: PlayerSave): AwakeningResult {
     if (!save.earthCareer || !save.earthCareerRngUsed) return { ok: false, error: '找不到已保存的覺醒結果。' };
-    const persisted = SaveManager.save({ ...save, awakeningRevealAcknowledged: true, currentGameState: GameState.TutorialAvailable });
+    const rewarded = grantStarterTower(save);
+    const persisted = SaveManager.save({
+      ...rewarded,
+      awakeningRevealAcknowledged: true,
+      preparationDay: Math.max(1, rewarded.preparationDay),
+      currentGameState: GameState.Preparation,
+    });
     if (!persisted.ok) return persisted;
     return { ok: true, save: persisted.save };
   },

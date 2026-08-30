@@ -7,18 +7,20 @@ export function canAwaken(save: PlayerSave): boolean {
 }
 
 export function advancePreparation(save: PlayerSave): PlayerSave {
-  if (save.awakeningCompleted) return save;
+  if (!save.awakeningCompleted || !save.starterTowerRewardClaimed || save.preparationDay >= PREPARATION_REQUIRED_DAYS) return save;
   const preparationDay = Math.min(PREPARATION_REQUIRED_DAYS, save.preparationDay + 1);
-  const awakeningUnlocked = preparationDay >= PREPARATION_REQUIRED_DAYS;
   return {
     ...save,
     preparationDay,
-    awakeningUnlocked,
-    currentGameState: awakeningUnlocked ? GameState.AwakeningAvailable : GameState.Preparation,
+    currentGameState: preparationDay >= PREPARATION_REQUIRED_DAYS ? GameState.TutorialAvailable : GameState.Preparation,
   };
 }
 
 export function unlockAwakening(save: PlayerSave): PlayerSave {
   if (save.awakeningCompleted) return save;
-  return { ...save, preparationDay: PREPARATION_REQUIRED_DAYS, awakeningUnlocked: true, currentGameState: GameState.AwakeningAvailable };
+  return { ...save, awakeningUnlocked: true, currentGameState: GameState.AwakeningAvailable };
+}
+
+export function canEnterTutorial(save: PlayerSave): boolean {
+  return Boolean(save.earthCareer && save.starterTowerRewardClaimed && save.preparationDay >= PREPARATION_REQUIRED_DAYS);
 }

@@ -1,10 +1,11 @@
 import { isCareerId } from './careers';
-import { CareerId, GameState, PlayerSave } from './types';
+import { CareerId, GameState, OwnedTowerProgress, PlayerSave, TowerId } from './types';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 4;
 export const SAVE_KEY = 'rng-isekai-tower-player-save';
 const LEGACY_SAVE_KEY = 'rng-isekai-tower-save-v1';
 const LEGACY_PENDING_KEY = 'rng-isekai-tower-pending-v1';
+const STARTER_TOWER: TowerId = 'EARTH_BASIC_AUTO_TURRET';
 
 export function createNewSave(now = new Date().toISOString()): PlayerSave {
   return {
@@ -12,8 +13,8 @@ export function createNewSave(now = new Date().toISOString()): PlayerSave {
     playerLevel: 1,
     playerAge: 17,
     preparationDay: 0,
-    currentGameState: GameState.Preparation,
-    awakeningUnlocked: false,
+    currentGameState: GameState.AwakeningAvailable,
+    awakeningUnlocked: true,
     awakeningCompleted: false,
     awakeningRevealAcknowledged: false,
     earthCareer: null,
@@ -22,14 +23,17 @@ export function createNewSave(now = new Date().toISOString()): PlayerSave {
     earthCareerRngUsed: false,
     galaxyCareerRngUsed: false,
     universeCareerRngUsed: false,
+    starterTowerRewardClaimed: false,
     ownedTowers: [],
-    towerLevels: {},
-    towerStars: {},
     materials: 0,
+    materialsById: {},
     currency: 18200,
     earthProgress: 0,
     galaxyProgress: 0,
     universeProgress: 0,
+    earthTutorialCleared: false,
+    tutorialFirstClearRewardClaimed: false,
+    tutorialClearCount: 0,
     saveCreatedAt: now,
     lastSaveAt: now,
   };
@@ -39,41 +43,80 @@ function normalizeCareer(value: unknown): CareerId | null {
   return isCareerId(value) ? value : null;
 }
 
-function normalizeSave(raw: Partial<PlayerSave>): PlayerSave {
-  const base = createNewSave(typeof raw.saveCreatedAt === 'string' ? raw.saveCreatedAt : undefined);
-  const preparationDay = Math.max(0, Math.min(5, Number(raw.preparationDay ?? base.preparationDay)));
-  const earthCareer = normalizeCareer(raw.earthCareer);
-  const awakeningCompleted = Boolean(raw.awakeningCompleted || earthCareer);
-  const earthCareerRngUsed = Boolean(raw.earthCareerRngUsed || earthCareer);
+function normalizeOwnedTowers(raw: Record<string, unknown>, now: string): OwnedTowerProgress[] {
+  const source = Array.isArray(raw.ownedTowers) ? raw.ownedTowers : [];
+  const legacyLevels = raw.towerLevels && typeof raw.towerLevels === 'object' ? raw.towerLevels as Record<string, number> : {};
+  const legacyStars = raw.towerStars && typeof raw.towerStars === 'object' ? raw.towerStars as Record<string, number> : {};
+  const result: OwnedTowerProgress[] = [];
+  for (const entry of source) {
+    const towerID = typeof entry === 'string' ? entry : (entry as Partial<OwnedTowerProgress>)?.towerID;
+    if (towerID !== STARTER_TOWER || result.some(tower => tower.towerID === towerID)) continue;
+    const detail = typeof entry === 'object' && entry ? entry as Partial<OwnedTowerProgress> : {};
+    result.push({
+      towerID,
+      level: Math.max(1, Math.floor(Number(detail.level ?? legacyLevels[towerID] ?? 1))),
+      stars: Math.min(5, Math.max(1, Math.floor(Number(detail.stars ?? legacyStars[towerID] ?? 1)))),
+      unlocked: detail.unlocked !== false,
+      obtainedAt: typeof detail.obtainedAt === 'string' ? detail.obtainedAt : now,
+    });
+  }
+  return result;
+}
+
+function normalizeSave(input: Partial<PlayerSave>): PlayerSave {
+  const raw = input as Record<string, unknown>;
+  const base = createNewSave(typeof input.saveCreatedAt === 'string' ? input.saveCreatedAt : undefined);
+  const oldVersion = Number(input.saveVersion ?? 1);
+  const earthCareer = normalizeCareer(input.earthCareer);
+  const awakeningCompleted = Boolean(input.awakeningCompleted || earthCareer);
+  const acknowledged = Boolean(input.awakeningRevealAcknowledged);
+  const preparationDay = earthCareer
+    ? Math.min(5, Math.max(acknowledged ? 1 : 0, Math.floor(Number(input.preparationDay ?? 0))))
+    : 0;
+  const now = base.saveCreatedAt;
+  let ownedTowers = normalizeOwnedTowers(raw, now);
+  const legacyCareerCompleted = oldVersion < SAVE_VERSION && Boolean(earthCareer && acknowledged);
+  const starterTowerRewardClaimed = Boolean(input.starterTowerRewardClaimed || legacyCareerCompleted);
+  if (starterTowerRewardClaimed && !ownedTowers.some(tower => tower.towerID === STARTER_TOWER)) {
+    ownedTowers = [...ownedTowers, { towerID: STARTER_TOWER, level: 1, stars: 1, unlocked: true, obtainedAt: now }];
+  }
+  const tutorialFirstClearRewardClaimed = Boolean(input.tutorialFirstClearRewardClaimed);
+  const earthTutorialCleared = Boolean(input.earthTutorialCleared || tutorialFirstClearRewardClaimed);
+  let currentGameState = GameState.AwakeningAvailable;
+  if (earthTutorialCleared) currentGameState = GameState.EarthProgress;
+  else if (earthCareer && !acknowledged) currentGameState = GameState.CareerObtained;
+  else if (earthCareer && starterTowerRewardClaimed && preparationDay >= 5) currentGameState = GameState.TutorialAvailable;
+  else if (earthCareer && starterTowerRewardClaimed) currentGameState = GameState.Preparation;
+
   return {
     ...base,
-    ...raw,
     saveVersion: SAVE_VERSION,
-    playerLevel: Math.max(1, Number(raw.playerLevel ?? base.playerLevel)),
-    playerAge: Math.max(17, Number(raw.playerAge ?? base.playerAge)),
+    playerLevel: Math.max(1, Number(input.playerLevel ?? base.playerLevel)),
+    playerAge: Math.max(17, Number(input.playerAge ?? base.playerAge)),
     preparationDay,
-    awakeningUnlocked: Boolean(raw.awakeningUnlocked || preparationDay >= 5 || awakeningCompleted),
+    currentGameState,
+    awakeningUnlocked: !awakeningCompleted,
     awakeningCompleted,
-    awakeningRevealAcknowledged: Boolean(raw.awakeningRevealAcknowledged),
+    awakeningRevealAcknowledged: acknowledged,
     earthCareer,
-    galaxyCareer: normalizeCareer(raw.galaxyCareer),
-    universeCareer: normalizeCareer(raw.universeCareer),
-    earthCareerRngUsed,
-    galaxyCareerRngUsed: Boolean(raw.galaxyCareerRngUsed),
-    universeCareerRngUsed: Boolean(raw.universeCareerRngUsed),
-    ownedTowers: Array.isArray(raw.ownedTowers) ? raw.ownedTowers.filter((value): value is string => typeof value === 'string') : [],
-    towerLevels: raw.towerLevels && typeof raw.towerLevels === 'object' ? raw.towerLevels : {},
-    towerStars: raw.towerStars && typeof raw.towerStars === 'object' ? raw.towerStars : {},
-    materials: Math.max(0, Number(raw.materials ?? 0)),
-    currency: Math.max(0, Number(raw.currency ?? 18200)),
-    earthProgress: Math.max(0, Number(raw.earthProgress ?? 0)),
-    galaxyProgress: Math.max(0, Number(raw.galaxyProgress ?? 0)),
-    universeProgress: Math.max(0, Number(raw.universeProgress ?? 0)),
-    saveCreatedAt: typeof raw.saveCreatedAt === 'string' ? raw.saveCreatedAt : base.saveCreatedAt,
-    lastSaveAt: typeof raw.lastSaveAt === 'string' ? raw.lastSaveAt : base.lastSaveAt,
-    currentGameState: Object.values(GameState).includes(raw.currentGameState as GameState)
-      ? raw.currentGameState as GameState
-      : (awakeningCompleted ? GameState.CareerObtained : preparationDay >= 5 ? GameState.AwakeningAvailable : GameState.Preparation),
+    galaxyCareer: normalizeCareer(input.galaxyCareer),
+    universeCareer: normalizeCareer(input.universeCareer),
+    earthCareerRngUsed: Boolean(input.earthCareerRngUsed || earthCareer),
+    galaxyCareerRngUsed: Boolean(input.galaxyCareerRngUsed),
+    universeCareerRngUsed: Boolean(input.universeCareerRngUsed),
+    starterTowerRewardClaimed,
+    ownedTowers,
+    materials: Math.max(0, Number(input.materials ?? 0)),
+    materialsById: input.materialsById && typeof input.materialsById === 'object' ? input.materialsById as Record<string, number> : {},
+    currency: Math.max(0, Number(input.currency ?? 18200)),
+    earthProgress: Math.max(0, Number(input.earthProgress ?? 0)),
+    galaxyProgress: Math.max(0, Number(input.galaxyProgress ?? 0)),
+    universeProgress: Math.max(0, Number(input.universeProgress ?? 0)),
+    earthTutorialCleared,
+    tutorialFirstClearRewardClaimed,
+    tutorialClearCount: Math.max(0, Math.floor(Number(input.tutorialClearCount ?? (earthTutorialCleared ? 1 : 0)))),
+    saveCreatedAt: typeof input.saveCreatedAt === 'string' ? input.saveCreatedAt : base.saveCreatedAt,
+    lastSaveAt: typeof input.lastSaveAt === 'string' ? input.lastSaveAt : base.lastSaveAt,
   };
 }
 
@@ -82,14 +125,12 @@ function migrateLegacy(): PlayerSave | null {
   const legacyPending = localStorage.getItem(LEGACY_PENDING_KEY);
   if (!legacyCareer && !legacyPending) return null;
   const save = createNewSave();
-  save.preparationDay = 5;
-  save.awakeningUnlocked = true;
   save.awakeningCompleted = true;
   save.earthCareerRngUsed = true;
   save.earthCareer = 'EARTH_WALL_GUARDIAN';
   save.awakeningRevealAcknowledged = Boolean(legacyCareer);
-  save.currentGameState = legacyCareer ? GameState.TutorialAvailable : GameState.CareerObtained;
-  return save;
+  save.currentGameState = GameState.CareerObtained;
+  return normalizeSave(save);
 }
 
 export const SaveManager = {
@@ -99,10 +140,13 @@ export const SaveManager = {
       const migrated = migrateLegacy();
       const save = migrated ?? createNewSave();
       this.save(save);
-      return { save, warning: migrated ? '已將舊版存檔升級至 Phase 2。' : undefined };
+      return { save, warning: migrated ? '已將舊版存檔升級至 Phase 4。' : undefined };
     }
     try {
-      return { save: normalizeSave(JSON.parse(raw) as Partial<PlayerSave>) };
+      const parsed = JSON.parse(raw) as Partial<PlayerSave> & Record<string, unknown>;
+      const save = normalizeSave(parsed);
+      if (Number(parsed.saveVersion) !== SAVE_VERSION) this.save(save);
+      return { save, warning: Number(parsed.saveVersion) !== SAVE_VERSION ? '永久存檔已安全升級至 Phase 4。' : undefined };
     } catch (error) {
       console.error('[SaveManager] Corrupted save data. A safe new save was created.', error);
       const save = createNewSave();
@@ -118,7 +162,7 @@ export const SaveManager = {
       return { ok: true, save: updated };
     } catch (error) {
       console.error('[SaveManager] Save failed.', error);
-      return { ok: false, error: '無法寫入永久存檔，覺醒已安全取消。' };
+      return { ok: false, error: '無法寫入永久存檔，操作已安全取消。' };
     }
   },
 

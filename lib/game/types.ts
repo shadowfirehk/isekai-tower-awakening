@@ -6,10 +6,12 @@ export enum RealmType {
 
 export enum GameState {
   GameStart = 'GAME_START',
-  Preparation = 'PREPARATION',
   AwakeningAvailable = 'AWAKENING_AVAILABLE',
   Awakening = 'AWAKENING',
   CareerObtained = 'CAREER_OBTAINED',
+  StarterTowerGranted = 'STARTER_TOWER_GRANTED',
+  Preparation = 'PREPARATION',
+  PreparationComplete = 'PREPARATION_COMPLETE',
   TutorialAvailable = 'TUTORIAL_AVAILABLE',
   TutorialBattle = 'TUTORIAL_BATTLE',
   EarthProgress = 'EARTH_PROGRESS',
@@ -23,6 +25,22 @@ export type CareerId =
   | 'EARTH_WALL_GUARDIAN'
   | 'GALAXY_STARBURST_HUNTER'
   | 'UNIVERSE_CHAOS_LAW_MASTER';
+
+export type TowerId = 'EARTH_BASIC_AUTO_TURRET';
+export type EnemyId = 'EARTH_GRUNT' | 'EARTH_RUNNER' | 'EARTH_TANK' | 'EARTH_BOSS';
+export type TargetingMode = 'FIRST' | 'NEAREST' | 'LAST' | 'FARTHEST' | 'STRONGEST' | 'WEAKEST';
+export type BattleState =
+  | 'SETUP'
+  | 'READY'
+  | 'WAVE_STARTING'
+  | 'WAVE_ACTIVE'
+  | 'WAVE_CLEAR'
+  | 'INTERMISSION'
+  | 'BOSS_WARNING'
+  | 'VICTORY'
+  | 'DEFEAT'
+  | 'RESULT'
+  | 'EXITING';
 
 export type StatModifierType = 'DEFENSE_PERCENT';
 
@@ -48,6 +66,14 @@ export interface CareerData {
   enabled: boolean;
 }
 
+export interface OwnedTowerProgress {
+  towerID: TowerId;
+  level: number;
+  stars: number;
+  unlocked: boolean;
+  obtainedAt: string;
+}
+
 export interface PlayerSave {
   saveVersion: number;
   playerLevel: number;
@@ -63,14 +89,17 @@ export interface PlayerSave {
   earthCareerRngUsed: boolean;
   galaxyCareerRngUsed: boolean;
   universeCareerRngUsed: boolean;
-  ownedTowers: string[];
-  towerLevels: Record<string, number>;
-  towerStars: Record<string, number>;
+  starterTowerRewardClaimed: boolean;
+  ownedTowers: OwnedTowerProgress[];
   materials: number;
+  materialsById: Record<string, number>;
   currency: number;
   earthProgress: number;
   galaxyProgress: number;
   universeProgress: number;
+  earthTutorialCleared: boolean;
+  tutorialFirstClearRewardClaimed: boolean;
+  tutorialClearCount: number;
   saveCreatedAt: string;
   lastSaveAt: string;
 }
@@ -84,4 +113,43 @@ export interface RngPoolEntry {
 export interface RngPool {
   realm: RealmType;
   entries: RngPoolEntry[];
+}
+
+export interface TowerBaseStats {
+  attack: number;
+  defense: number;
+  maxHP: number;
+  attackSpeed: number;
+  range: number;
+  critChance: number;
+  critDamage: number;
+  accuracy: number;
+  penetration: number;
+}
+
+export interface TowerData {
+  id: TowerId;
+  name: string;
+  englishName: string;
+  realm: RealmType;
+  rarity: 'NORMAL';
+  description: string;
+  baseStats: TowerBaseStats;
+  scaleAttackSpeedWithStars: boolean;
+}
+
+export interface FinalTowerStats extends TowerBaseStats {
+  levelMultiplier: number;
+  starMultiplier: number;
+}
+
+export interface EnemyData {
+  id: EnemyId;
+  name: string;
+  maxHP: number;
+  defense: number;
+  speed: number;
+  baseDamage: number;
+  reward: number;
+  boss: boolean;
 }
