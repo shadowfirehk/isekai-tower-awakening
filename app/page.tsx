@@ -23,7 +23,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { BattleScreen } from '@/components/game/battle-screen';
 import { EarthRegionScreen } from '@/components/game/earth-region-screen';
+import { CharacterScreen } from '@/components/game/character-screen';
 import { TowerScreen } from '@/components/game/tower-screen';
+import { VisualGallery } from '@/components/game/visual-gallery';
 import { AwakeningController } from '@/lib/game/awakening-controller';
 import { getCareerById } from '@/lib/game/careers';
 import { getCareerModifiers, getDefenseMultiplier } from '@/lib/game/passives';
@@ -35,12 +37,12 @@ import { createNewSave, SaveManager } from '@/lib/game/save-manager';
 import { TowerUpgradeService } from '@/lib/game/tower-upgrade-service';
 import { EarthTierId, GameState, PlayerSave, RealmType } from '@/lib/game/types';
 
-type Stage = 'menu' | 'preparation' | 'charging' | 'candidates' | 'reveal' | 'career' | 'tower' | 'earth' | 'battle';
+type Stage = 'menu' | 'preparation' | 'charging' | 'candidates' | 'reveal' | 'career' | 'tower' | 'earth' | 'battle' | 'gallery';
 
 const NAV_ITEMS = [
   { zh: '戰鬥', en: 'BATTLE', icon: Swords, unlocked: true },
   { zh: '炮台', en: 'TOWER', icon: TowerControl, unlocked: true },
-  { zh: '背包', en: 'INVENTORY', icon: Archive, unlocked: false },
+  { zh: '圖鑑', en: 'CODEX', icon: Archive, unlocked: true },
   { zh: '世界', en: 'WORLD', icon: Globe2, unlocked: true },
   { zh: '職業', en: 'CAREER', icon: Sparkles, unlocked: true },
 ];
@@ -190,6 +192,10 @@ export default function Home() {
       setStage('tower');
       return;
     }
+    if(index===2&&career){
+      if(!save.earthTutorialCleared){setToast('完成新手試煉後解鎖地球視覺圖鑑');return;}
+      setStage('gallery');return;
+    }
     if(index===3&&career){
       if(!save.earthTutorialCleared){setToast('完成新手試煉後解鎖地球十二階進度');return;}
       setStage('earth');return;
@@ -255,6 +261,8 @@ export default function Home() {
   if (stage === 'tower') return <TowerScreen save={save} onBack={() => setStage('menu')} onBattle={() => save.earthTutorialCleared?setStage('earth'):canEnterTutorial(save)?setStage('battle'):setToast('完成五日準備後即可進入新手試煉')} onCommitted={acceptCommittedSave} />;
   if(stage==='earth')return <EarthRegionScreen save={save} onBack={()=>setStage('menu')} onEnter={tier=>{setBattleTier(tier);setStage('battle');}} onCommitted={acceptCommittedSave}/>;
   if (stage === 'battle') return <BattleScreen save={save} tierID={battleTier} debugMode={debugMode} onBack={() => {setStage(battleTier?'earth':'menu');setBattleTier(undefined);}} onCommitted={acceptCommittedSave} />;
+  if(stage==='career')return <CharacterScreen save={save} career={career} modifiers={modifiers} onBack={()=>setStage('menu')}/>;
+  if(stage==='gallery')return <VisualGallery save={save} onBack={()=>setStage('menu')}/>;
 
   return (
     <main className={`game-shell ${career ? 'is-awakened' : ''}`}>
@@ -305,7 +313,7 @@ export default function Home() {
       </aside>
 
       <nav className="bottom-nav" aria-label="主要導覽">
-        {NAV_ITEMS.map((item, index) => { const Icon = item.icon; const locked = !career || !item.unlocked || (index===3&&!save.earthTutorialCleared); return <button key={item.en} className={index === 4 ? 'active' : ''} onClick={() => handleNav(index)}><Icon /><span>{item.zh}<small>{item.en}</small></span>{index === 1 && growthAvailable && <i className="upgrade-dot">UP</i>}{locked && index !== 4 && <em><LockKeyhole /> LOCK</em>}</button>; })}
+        {NAV_ITEMS.map((item, index) => { const Icon = item.icon; const locked = !career || !item.unlocked || ((index===2||index===3)&&!save.earthTutorialCleared); return <button key={item.en} className={index === 4 ? 'active' : ''} onClick={() => handleNav(index)}><Icon /><span>{item.zh}<small>{item.en}</small></span>{index === 1 && growthAvailable && <i className="upgrade-dot">UP</i>}{locked && index !== 4 && <em><LockKeyhole /> LOCK</em>}</button>; })}
       </nav>
       <div className="system-line"><span /> GAME STATE <b>{save.currentGameState}</b></div>
       {toast && <output className="toast" aria-live="polite"><CircleDot /> {toast}</output>}
@@ -314,7 +322,7 @@ export default function Home() {
         <aside className="debug-panel" aria-label="開發者工具">
           <p><Code2 /> DEV · PHASE 6</p>
           <dl><div><dt>STATE</dt><dd>{save.currentGameState}</dd></div><div><dt>DAY</dt><dd>{save.preparationDay}/5</dd></div><div><dt>EARTH RNG</dt><dd>{save.earthCareerRngUsed ? 'USED' : 'READY'}</dd></div><div><dt>CAREER</dt><dd>{save.earthCareer ?? 'NONE'}</dd></div><div><dt>DEF MULTI</dt><dd>{getDefenseMultiplier(save).toFixed(2)}×</dd></div></dl>
-          <div className="debug-actions"><button onClick={handleAdvanceDay}>+ DAY</button><button onClick={debugUnlock}>TUTORIAL READY</button><button onClick={() => debugAddMaterial(EARTH_BASIC_MATERIAL, 100)}>+100 BASIC</button><button onClick={() => debugAddMaterial(EARTH_BASIC_MATERIAL, 1000)}>+1000 BASIC</button><button onClick={() => debugAddMaterial(EARTH_STAR_CORE, 1)}>+1 STAR CORE</button><button onClick={() => debugAddMaterial(EARTH_STAR_CORE, 10)}>+10 CORES</button><button onClick={() => debugSetTower(1, 1)}>SET Lv1 1★</button><button onClick={() => debugSetTower(10, 5)}>SET Lv10 5★</button><button onClick={debugDuplicateRoll}>DUPLICATE TEST</button><button onClick={debugRecovery}>RELOAD RECOVERY</button><button onClick={() => setStage('tower')}>TOWER UI</button><button onClick={() => setStage('earth')}>EARTH UI</button><button onClick={() => {setBattleTier(undefined);setStage('battle');}}>TUTORIAL BATTLE</button><button className="danger" onClick={debugReset}><RotateCcw /> RESET SAVE</button></div>
+          <div className="debug-actions"><button onClick={handleAdvanceDay}>+ DAY</button><button onClick={debugUnlock}>TUTORIAL READY</button><button onClick={() => debugAddMaterial(EARTH_BASIC_MATERIAL, 100)}>+100 BASIC</button><button onClick={() => debugAddMaterial(EARTH_BASIC_MATERIAL, 1000)}>+1000 BASIC</button><button onClick={() => debugAddMaterial(EARTH_STAR_CORE, 1)}>+1 STAR CORE</button><button onClick={() => debugAddMaterial(EARTH_STAR_CORE, 10)}>+10 CORES</button><button onClick={() => debugSetTower(1, 1)}>SET Lv1 1★</button><button onClick={() => debugSetTower(10, 5)}>SET Lv10 5★</button><button onClick={debugDuplicateRoll}>DUPLICATE TEST</button><button onClick={debugRecovery}>RELOAD RECOVERY</button><button onClick={() => setStage('tower')}>TOWER UI</button><button onClick={() => setStage('earth')}>EARTH UI</button><button onClick={() => setStage('gallery')}>VISUAL CODEX</button><button onClick={() => {setBattleTier(undefined);setStage('battle');}}>TUTORIAL BATTLE</button><button className="danger" onClick={debugReset}><RotateCcw /> RESET SAVE</button></div>
         </aside>
       )}
 
@@ -328,21 +336,6 @@ export default function Home() {
         </section>
       )}
 
-      {stage === 'career' && (
-        <section className="career-overlay" aria-label="職業資料庫">
-          <div className="career-screen">
-            <header><div><p className="eyebrow">CAREER ARCHIVE</p><h2>命運職業檔案</h2></div><button aria-label="關閉職業介面" onClick={() => setStage('menu')}><X /></button></header>
-            <div className="realm-tabs"><span className="active">EARTH</span><span>GALAXY · LOCKED</span><span>UNIVERSE · LOCKED</span></div>
-            <div className="career-detail">
-              <div className="career-art-card"><div /><span>{career ? 'PERMANENT' : 'UNAWAKENED'}</span></div>
-              <div className="career-data">
-                {career ? <><p className="eyebrow">{career.classification}</p><span className="english-name">{career.englishName}</span><h2>{career.displayName}</h2><p className="career-description">「{career.description}」</p><section><small>CAREER PASSIVE</small><h3>{career.passiveName}</h3><p>{career.passiveDescription}</p></section><section><small>ACTIVE STAT MODIFIERS</small>{modifiers.map(modifier => <p key={`${modifier.sourceId}-${modifier.type}`} className="modifier-row"><span>{modifier.type}</span><b>+{Math.round(modifier.value * 100)}%</b></p>)}</section><div className="career-status"><ShieldCheck /> STATUS · ACTIVE / EARTH RNG · PERMANENTLY USED</div></> : <><p className="eyebrow">EARTH CAREER</p><h2>尚未覺醒</h2><p className="career-description">17 歲時可進行唯一一次的地球職業覺醒。</p><Button className="awaken-button" onClick={openAwakening}>前往覺醒</Button></>}
-              </div>
-            </div>
-            <div className="locked-realms"><article><Globe2 /><div><small>REALM 02</small><h3>GALAXY</h3><p>星爆獵殺者資料已保留，玩法尚未開放。</p></div><LockKeyhole /></article><article><CircleDot /><div><small>REALM 03</small><h3>UNIVERSE</h3><p>混沌法則主宰資料已保留，玩法尚未開放。</p></div><LockKeyhole /></article></div>
-          </div>
-        </section>
-      )}
     </main>
   );
 }

@@ -18,13 +18,14 @@ const SEEDS: TowerSeed[] = [
   ['EARTH_SOVEREIGN_END_TURRET','帝境終焉炮塔','SOVEREIGN END TURRET','SOVEREIGN',19800,1.18,9.5,900,.25,'AOE',6,2.3,['終焉','全域']],
 ];
 
-export const TOWER_CATALOG = Object.fromEntries(SEEDS.map(seed => {
+export const TOWER_CATALOG = Object.fromEntries(SEEDS.map((seed,artIndex) => {
   const [id,name,englishName,tierID,attack,attackSpeed,range,penetration,critChance,attackPattern,maxTargets,bossDamageMultiplier,roleTags] = seed;
   const data: TowerData = {
     id,name,englishName,tierID,rarity:tierID,realm:RealmType.Earth,
     description:`${name}以${roleTags.join('、')}為核心定位，適合地球 ${tierID} 階防線。`,
     baseStats:{ attack, defense:50, maxHP:500, attackSpeed, range, critChance, critDamage:1.6, accuracy:1, penetration },
     scaleAttackSpeedWithStars:id === 'EARTH_RAPID_FIRE_TURRET',roleTags,attackPattern,maxTargets,bossDamageMultiplier,
+    artwork:'/assets/earth-tower-atlas.png',artIndex,roleIcon:roleTags[0],revealVFXID:`VFX_TOWER_${tierID}_REVEAL`,
   };
   return [id,data];
 })) as Record<TowerId,TowerData>;

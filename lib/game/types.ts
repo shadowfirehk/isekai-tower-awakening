@@ -205,6 +205,10 @@ export interface TowerData {
   attackPattern: 'SINGLE' | 'AOE' | 'CHAIN';
   maxTargets: number;
   bossDamageMultiplier: number;
+  artwork: string;
+  artIndex: number;
+  roleIcon: string;
+  revealVFXID: string;
 }
 
 export interface FinalTowerStats extends TowerBaseStats {
@@ -226,6 +230,19 @@ export interface EnemyData {
   regenerationPercent?: number;
   elite?: boolean;
   supportAura?: number;
+  portrait: string;
+  cardArtwork: string;
+  battlePrefab: string;
+  silhouette: string;
+  icon: string;
+  hitVFX: string;
+  deathVFX: string;
+  spawnVFX: string;
+  baseReachVFX: string;
+  animationProfile: string;
+  visualScale: number;
+  visualFamily: string;
+  tierVisualVariant: EarthTierId | 'TUTORIAL';
 }
 
 export interface MaterialData {

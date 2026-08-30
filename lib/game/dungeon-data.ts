@@ -1,15 +1,18 @@
 import { getEarthTier } from './earth-tiers';
 import { EarthTierId, EnemyData, EnemyId, RealmType } from './types';
+import { ENEMY_VISUAL_PROFILES } from './visual-config';
+
+function art(id:EnemyId):Pick<EnemyData,'portrait'|'cardArtwork'|'battlePrefab'|'silhouette'|'icon'|'hitVFX'|'deathVFX'|'spawnVFX'|'baseReachVFX'|'animationProfile'|'visualScale'|'visualFamily'|'tierVisualVariant'>{const profile=ENEMY_VISUAL_PROFILES[id];return{portrait:'/assets/earth-enemy-boss-atlas.png',cardArtwork:'/assets/earth-enemy-boss-atlas.png',battlePrefab:profile.id,silhouette:profile.silhouette,icon:profile.role,hitVFX:profile.hitVFX,deathVFX:profile.deathVFX,spawnVFX:profile.spawnVFX,baseReachVFX:profile.baseReachVFX,animationProfile:profile.movementAnimation,visualScale:profile.visualScale,visualFamily:profile.visualFamily,tierVisualVariant:'TUTORIAL'};}
 
 export const ENEMY_CATALOG:Record<EnemyId,EnemyData>={
-  EARTH_GRUNT:{id:'EARTH_GRUNT',name:'裂隙行者',maxHP:80,defense:10,speed:.07,baseDamage:1,reward:2,boss:false,archetype:'GRUNT'},
-  EARTH_RUNNER:{id:'EARTH_RUNNER',name:'疾行獵獸',maxHP:58,defense:4,speed:.105,baseDamage:1,reward:3,boss:false,archetype:'RUNNER'},
-  EARTH_TANK:{id:'EARTH_TANK',name:'岩甲巨獸',maxHP:260,defense:35,speed:.043,baseDamage:1,reward:6,boss:false,archetype:'TANK'},
-  EARTH_ELITE:{id:'EARTH_ELITE',name:'地脈菁英',maxHP:180,defense:22,speed:.06,baseDamage:2,reward:8,boss:false,archetype:'ELITE',elite:true},
-  EARTH_SHIELDED:{id:'EARTH_SHIELDED',name:'晶盾守衛',maxHP:210,defense:26,speed:.052,baseDamage:2,reward:9,boss:false,archetype:'SHIELDED',shieldPercent:.55},
-  EARTH_REGENERATOR:{id:'EARTH_REGENERATOR',name:'再生古獸',maxHP:225,defense:18,speed:.055,baseDamage:2,reward:10,boss:false,archetype:'REGENERATING',regenerationPercent:.025},
-  EARTH_SUPPORT:{id:'EARTH_SUPPORT',name:'地脈祭司',maxHP:145,defense:14,speed:.058,baseDamage:2,reward:10,boss:false,archetype:'SUPPORT',supportAura:.2},
-  EARTH_BOSS:{id:'EARTH_BOSS',name:'地脈破壞者',maxHP:650,defense:28,speed:.032,baseDamage:5,reward:25,boss:true,archetype:'BOSS'},
+  EARTH_GRUNT:{id:'EARTH_GRUNT',name:'裂隙行者',maxHP:80,defense:10,speed:.07,baseDamage:1,reward:2,boss:false,archetype:'GRUNT',...art('EARTH_GRUNT')},
+  EARTH_RUNNER:{id:'EARTH_RUNNER',name:'疾行獵獸',maxHP:58,defense:4,speed:.105,baseDamage:1,reward:3,boss:false,archetype:'RUNNER',...art('EARTH_RUNNER')},
+  EARTH_TANK:{id:'EARTH_TANK',name:'岩甲巨獸',maxHP:260,defense:35,speed:.043,baseDamage:1,reward:6,boss:false,archetype:'TANK',...art('EARTH_TANK')},
+  EARTH_ELITE:{id:'EARTH_ELITE',name:'地脈菁英',maxHP:180,defense:22,speed:.06,baseDamage:2,reward:8,boss:false,archetype:'ELITE',elite:true,...art('EARTH_ELITE')},
+  EARTH_SHIELDED:{id:'EARTH_SHIELDED',name:'晶盾守衛',maxHP:210,defense:26,speed:.052,baseDamage:2,reward:9,boss:false,archetype:'SHIELDED',shieldPercent:.55,...art('EARTH_SHIELDED')},
+  EARTH_REGENERATOR:{id:'EARTH_REGENERATOR',name:'再生古獸',maxHP:225,defense:18,speed:.055,baseDamage:2,reward:10,boss:false,archetype:'REGENERATING',regenerationPercent:.025,...art('EARTH_REGENERATOR')},
+  EARTH_SUPPORT:{id:'EARTH_SUPPORT',name:'地脈祭司',maxHP:145,defense:14,speed:.058,baseDamage:2,reward:10,boss:false,archetype:'SUPPORT',supportAura:.2,...art('EARTH_SUPPORT')},
+  EARTH_BOSS:{id:'EARTH_BOSS',name:'地脈破壞者',maxHP:650,defense:28,speed:.032,baseDamage:5,reward:25,boss:true,archetype:'BOSS',...art('EARTH_BOSS')},
 };
 
 export interface WaveGroup { enemyId:EnemyId; count:number; interval:number; }
