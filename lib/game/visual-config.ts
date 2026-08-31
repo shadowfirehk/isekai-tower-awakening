@@ -304,7 +304,7 @@ export interface BattleEnvironmentProfile {
   lightingProfile: string;
 }
 
-const ENVIRONMENT_ATLAS = '/assets/earth-battle-environment-atlas-v1.png';
+const ENVIRONMENT_ATLAS = '/assets/earth-battle-environment-atlas-v1.webp';
 export const BATTLE_ENVIRONMENT_PROFILES: Record<
   BattleEnvironmentFamily,
   BattleEnvironmentProfile
