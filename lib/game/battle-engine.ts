@@ -36,6 +36,14 @@ import {
 } from './battle-depth';
 import { BattleBlessingManager } from './battle-blessing-manager';
 import { SynergyManager } from './synergy-manager';
+import {
+  BATTLE_LEVEL_MULTIPLIERS,
+  BattleUpgradeModifiers,
+  battleBuildCost,
+  battleUpgradeCost,
+  getBattleBranch,
+  getBattleBranches,
+} from './battle-economy';
 
 type EnemyStatus = BossMechanic | 'SHOCKED';
 export interface EnemyRuntime {
@@ -66,6 +74,7 @@ export interface EnemyRuntime {
   mechanicTimer: number;
   vulnerableRemaining: number;
   damageReduction: number;
+  battleGoldReward: number;
   state: 'ALIVE' | 'DYING' | 'DEAD';
 }
 export interface TowerRuntime {
@@ -86,6 +95,14 @@ export interface TowerRuntime {
   stationaryTime: number;
   fortifyLevel: number;
   damageDealt: number;
+  permanentLevel: number;
+  permanentStars: number;
+  battleLevel: number;
+  branchLv3: string | null;
+  branchLv5: string | null;
+  investedGold: number;
+  nextUpgradeCost: number;
+  spawnEffectRemaining: number;
 }
 export interface ProjectileRuntime {
   runtimeId: number;
@@ -98,6 +115,8 @@ export interface ProjectileRuntime {
   maxTargets: number;
   bossDamageMultiplier: number;
   skillPierce: boolean;
+  towerId: TowerId;
+  attackVFXID: string;
 }
 interface SpawnEntry {
   enemyId: EnemyId;
@@ -113,6 +132,17 @@ export interface BattleMetrics {
   baseDamageTaken: number;
   retryCount: number;
   damageByTower: Partial<Record<TowerId, number>>;
+  goldEarned: number;
+  goldSpent: number;
+  buildPurchases: number;
+  upgradePurchases: number;
+  sellCount: number;
+  economyByWave: Partial<
+    Record<
+      number,
+      { gold: number; towerCount: number; averageBattleLevel: number }
+    >
+  >;
 }
 export interface BattleSnapshot {
   state: BattleState;
@@ -141,8 +171,13 @@ export interface BattleSnapshot {
   defeatHint: string;
   sessionSeed: number;
   modifierStack: string[];
+  battleGold: number;
+  startingGold: number;
+  slotCapacity: number;
+  buildCosts: Partial<Record<TowerId, number>>;
+  goldEvent: { serial: number; amount: number; reason: string } | null;
 }
-const SLOT_PROGRESS = [0.18, 0.31, 0.43, 0.58, 0.7, 0.82];
+const SLOT_PROGRESS = [0.14, 0.26, 0.38, 0.5, 0.62, 0.74, 0.86];
 const BLESSING_WAVES = new Set([5, 10, 15, 20]);
 
 function cloneStats(stats: FinalTowerStats): FinalTowerStats {
@@ -201,6 +236,14 @@ export class TowerFactory {
       stationaryTime: 0,
       fortifyLevel: 0,
       damageDealt: 0,
+      permanentLevel: progress.level,
+      permanentStars: progress.stars,
+      battleLevel: 1,
+      branchLv3: null,
+      branchLv5: null,
+      investedGold: 0,
+      nextUpgradeCost: 0,
+      spawnEffectRemaining: 0.7,
     };
   }
 }
@@ -240,6 +283,16 @@ export class BattleEngine {
   private retryCount = 0;
   private damageByTower: Partial<Record<TowerId, number>> = {};
   private defeatHint = '';
+  private battleGold: number;
+  private goldEarned = 0;
+  private goldSpent = 0;
+  private buildPurchases = 0;
+  private upgradePurchases = 0;
+  private sellCount = 0;
+  private economyByWave: BattleMetrics['economyByWave'] = {};
+  private goldEvent: BattleSnapshot['goldEvent'] = null;
+  private goldEventSerial = 0;
+  private retiredTowers = new Map<number, TowerRuntime>();
   constructor(
     save: PlayerSave,
     dungeon: DungeonConfig = EARTH_TUTORIAL_DUNGEON,
@@ -248,6 +301,7 @@ export class BattleEngine {
     this.save = save;
     this.dungeon = dungeon;
     this.baseHP = dungeon.startingBaseHP;
+    this.battleGold = dungeon.startingGold;
     this.seed = seed >>> 0;
   }
   private topology() {
@@ -273,6 +327,12 @@ export class BattleEngine {
       baseDamageTaken: this.baseDamageTaken,
       retryCount: this.retryCount,
       damageByTower: { ...this.damageByTower },
+      goldEarned: this.goldEarned,
+      goldSpent: this.goldSpent,
+      buildPurchases: this.buildPurchases,
+      upgradePurchases: this.upgradePurchases,
+      sellCount: this.sellCount,
+      economyByWave: { ...this.economyByWave },
     };
   }
   snapshot(): BattleSnapshot {
@@ -285,6 +345,7 @@ export class BattleEngine {
       speed: this.speed,
       deployed: this.deployed.map((t) => ({
         ...t,
+        nextUpgradeCost: this.upgradeCost(t),
         baseStats: cloneStats(t.baseStats),
         stats: cloneStats(t.stats),
       })),
@@ -314,6 +375,16 @@ export class BattleEngine {
       defeatHint: this.defeatHint,
       sessionSeed: this.seed,
       modifierStack: this.modifierStack(),
+      battleGold: this.battleGold,
+      startingGold: this.dungeon.startingGold,
+      slotCapacity: Math.min(this.dungeon.slotCount, SLOT_PROGRESS.length),
+      buildCosts: Object.fromEntries(
+        this.allowedTowers().map((towerID) => [
+          towerID,
+          this.buildCost(towerID),
+        ]),
+      ),
+      goldEvent: this.goldEvent ? { ...this.goldEvent } : null,
     };
   }
   private decision() {
@@ -322,20 +393,46 @@ export class BattleEngine {
   private allowedTowers() {
     return this.dungeon.tierID
       ? this.save.earthLoadout
-      : [STARTER_TOWER_ID, ...GOLDEN_TUTORIAL_LOADOUT];
+      : GOLDEN_TUTORIAL_LOADOUT;
+  }
+  private buildCost(towerId: TowerId) {
+    return battleBuildCost(
+      towerId,
+      Math.min(0.45, this.baseModifiers().buildCostReduction ?? 0),
+    );
+  }
+  private upgradeCost(tower: TowerRuntime) {
+    return battleUpgradeCost(
+      tower.towerId,
+      tower.battleLevel,
+      Math.min(0.45, this.baseModifiers().upgradeCostReduction ?? 0),
+    );
+  }
+  private changeGold(amount: number, reason: string) {
+    this.battleGold = Math.max(0, this.battleGold + amount);
+    this.goldEvent = { serial: ++this.goldEventSerial, amount, reason };
   }
   deploy(slot: number, towerId: TowerId = STARTER_TOWER_ID) {
     if (!['SETUP', 'READY', 'INTERMISSION', 'WAVE_ACTIVE'].includes(this.state))
       return { ok: false as const, error: '目前狀態無法部署炮塔。' };
     if (this.deployed.some((t) => t.slot === slot))
       return { ok: false as const, error: '此部署槽已被佔用。' };
-    if (this.deployed.length >= this.dungeon.deploymentCap)
+    if (
+      slot < 0 ||
+      slot >= Math.min(this.dungeon.slotCount, SLOT_PROGRESS.length)
+    )
       return {
         ok: false as const,
-        error: `部署上限為 ${this.dungeon.deploymentCap} 座。`,
+        error: '此地圖部署節點無效。',
       };
     if (!this.allowedTowers().includes(towerId))
       return { ok: false as const, error: '此炮塔未列入本次編成。' };
+    const cost = this.buildCost(towerId);
+    if (this.battleGold < cost)
+      return {
+        ok: false as const,
+        error: `戰鬥金幣不足，需要 ${cost}。`,
+      };
     const tower = TowerFactory.create(
       this.save,
       towerId,
@@ -345,23 +442,74 @@ export class BattleEngine {
     );
     if (!tower)
       return { ok: false as const, error: '尚未擁有此炮塔，或部署槽無效。' };
+    tower.investedGold = cost;
+    tower.nextUpgradeCost = this.upgradeCost(tower);
+    this.changeGold(-cost, `建造 ${getTowerById(towerId)?.name ?? towerId}`);
+    this.goldSpent += cost;
+    this.buildPurchases++;
     this.deployed.push(tower);
     this.refreshTowerStats();
     this.state = this.state === 'SETUP' ? 'READY' : this.state;
     this.notice = `已部署 ${getTowerById(towerId)?.name ?? towerId}。`;
     this.decision();
-    return { ok: true as const };
+    return { ok: true as const, spent: cost };
+  }
+  sellTower(runtimeId: number) {
+    if (!['SETUP', 'READY', 'INTERMISSION', 'WAVE_ACTIVE'].includes(this.state))
+      return { ok: false as const, error: '目前無法出售炮塔。' };
+    const tower = this.deployed.find((item) => item.runtimeId === runtimeId);
+    if (!tower) return { ok: false as const, error: '炮塔不存在。' };
+    const refund = Math.floor(tower.investedGold * 0.7);
+    this.deployed = this.deployed.filter((t) => t.runtimeId !== runtimeId);
+    this.retiredTowers.set(runtimeId, tower);
+    this.changeGold(
+      refund,
+      `出售 ${getTowerById(tower.towerId)?.name ?? tower.towerId}`,
+    );
+    this.sellCount++;
+    this.refreshTowerStats();
+    this.notice = `炮塔已出售，返還 ${refund} 金幣。`;
+    this.decision();
+    return { ok: true as const, refund };
   }
   retreat(runtimeId: number) {
-    if (!['SETUP', 'READY', 'INTERMISSION', 'WAVE_ACTIVE'].includes(this.state))
-      return false;
-    const before = this.deployed.length;
-    this.deployed = this.deployed.filter((t) => t.runtimeId !== runtimeId);
-    if (this.deployed.length === before) return false;
+    return this.sellTower(runtimeId).ok;
+  }
+  upgradeTower(runtimeId: number, branchID?: string) {
+    if (!['READY', 'INTERMISSION', 'WAVE_ACTIVE'].includes(this.state))
+      return { ok: false as const, error: '目前無法進行戰鬥升級。' };
+    const tower = this.deployed.find((item) => item.runtimeId === runtimeId);
+    if (!tower) return { ok: false as const, error: '炮塔不存在。' };
+    if (tower.battleLevel >= 5)
+      return { ok: false as const, error: '此炮塔已達 Battle Lv.5。' };
+    const targetLevel = tower.battleLevel + 1;
+    if (targetLevel === 3 || targetLevel === 5) {
+      const options = getBattleBranches(tower.towerId, targetLevel);
+      if (!branchID)
+        return {
+          ok: false as const,
+          error: '請選擇戰鬥升級分支。',
+          needsBranch: true as const,
+          options,
+        };
+      if (!options.some((item) => item.branchID === branchID))
+        return { ok: false as const, error: '升級分支無效。' };
+    }
+    const cost = this.upgradeCost(tower);
+    if (this.battleGold < cost)
+      return { ok: false as const, error: `戰鬥金幣不足，需要 ${cost}。` };
+    this.changeGold(-cost, `Battle Lv.${targetLevel}`);
+    this.goldSpent += cost;
+    this.upgradePurchases++;
+    tower.investedGold += cost;
+    tower.battleLevel = targetLevel;
+    if (targetLevel === 3) tower.branchLv3 = branchID ?? null;
+    if (targetLevel === 5) tower.branchLv5 = branchID ?? null;
+    tower.nextUpgradeCost = this.upgradeCost(tower);
     this.refreshTowerStats();
-    this.notice = '炮塔已撤回，固守累積重設。';
+    this.notice = `${getTowerById(tower.towerId)?.name}提升至 Battle Lv.${targetLevel}。`;
     this.decision();
-    return true;
+    return { ok: true as const, spent: cost, battleLevel: targetLevel };
   }
   setTargeting(runtimeId: number, mode: TargetingMode) {
     const tower = this.deployed.find((t) => t.runtimeId === runtimeId);
@@ -437,6 +585,7 @@ export class BattleEngine {
       this.state = 'WAVE_CLEAR';
       this.stateTimer = 0.45;
       this.notice = `WAVE ${String(this.wave).padStart(2, '0')} CLEAR`;
+      this.recordEconomyCheckpoint();
     }
   }
   private startNextWave() {
@@ -518,6 +667,10 @@ export class BattleEngine {
         tower.skillActiveRemaining - delta,
       );
       tower.overdriveRemaining = Math.max(0, tower.overdriveRemaining - delta);
+      tower.spawnEffectRemaining = Math.max(
+        0,
+        tower.spawnEffectRemaining - delta,
+      );
       tower.stationaryTime += delta;
       tower.fortifyLevel =
         tower.stationaryTime >= 40 ? 2 : tower.stationaryTime >= 20 ? 1 : 0;
@@ -651,6 +804,23 @@ export class BattleEngine {
       );
     return result;
   }
+  private battleUpgradeModifiers(tower: TowerRuntime) {
+    const result: BattleUpgradeModifiers = {};
+    for (const branchID of [tower.branchLv3, tower.branchLv5]) {
+      const branch = getBattleBranch(tower.towerId, branchID);
+      if (!branch) continue;
+      for (const key of Object.keys(branch.modifiers) as Array<
+        keyof BattleUpgradeModifiers
+      >)
+        result[key] = (result[key] ?? 0) + (branch.modifiers[key] ?? 0);
+    }
+    return result;
+  }
+  private hasBranchEffect(tower: TowerRuntime, effect: string) {
+    return [tower.branchLv3, tower.branchLv5].some(
+      (branchID) => getBattleBranch(tower.towerId, branchID)?.effect === effect,
+    );
+  }
   private refreshTowerStats() {
     const globalRoyal = this.deployed.some(
         (t) =>
@@ -665,10 +835,21 @@ export class BattleEngine {
     for (const tower of this.deployed) {
       const stats = cloneStats(tower.baseStats),
         mod = this.collectModifiers(tower),
+        battleMod = this.battleUpgradeModifiers(tower),
         skill = TOWER_SKILLS[tower.towerId],
         affinity = TOWER_AFFINITIES[tower.towerId];
-      let attackPercent = mod.attackPercent ?? 0,
-        speedPercent = mod.attackSpeedPercent ?? 0;
+      const battleMultiplier =
+        BATTLE_LEVEL_MULTIPLIERS[
+          Math.max(0, Math.min(4, tower.battleLevel - 1))
+        ];
+      stats.attack *= battleMultiplier;
+      stats.defense *= 1 + (battleMultiplier - 1) * 0.65;
+      stats.maxHP *= 1 + (battleMultiplier - 1) * 0.55;
+      stats.penetration *= 1 + (battleMultiplier - 1) * 0.4;
+      let attackPercent =
+          (mod.attackPercent ?? 0) + (battleMod.attackPercent ?? 0),
+        speedPercent =
+          (mod.attackSpeedPercent ?? 0) + (battleMod.attackSpeedPercent ?? 0);
       if (
         this.baseHP === this.dungeon.startingBaseHP &&
         this.activeBlessings.some((b) => b.blessingID === 'B_PERFECT_LINE')
@@ -711,11 +892,15 @@ export class BattleEngine {
       stats.attackSpeed *= Math.max(0.2, 1 + speedPercent);
       stats.critChance = Math.min(
         0.95,
-        stats.critChance + (mod.critChance ?? 0),
+        stats.critChance + (mod.critChance ?? 0) + (battleMod.critChance ?? 0),
       );
-      stats.critDamage *= 1 + (mod.critDamagePercent ?? 0);
-      stats.penetration += mod.penetration ?? 0;
-      stats.defense *= 1 + tower.fortifyLevel * 0.1;
+      stats.critDamage *=
+        1 + (mod.critDamagePercent ?? 0) + (battleMod.critDamagePercent ?? 0);
+      stats.penetration +=
+        (mod.penetration ?? 0) + (battleMod.penetration ?? 0);
+      stats.range *= 1 + (battleMod.rangePercent ?? 0);
+      stats.defense *=
+        1 + tower.fortifyLevel * 0.1 + (battleMod.defensePercent ?? 0);
       tower.stats = stats;
     }
   }
@@ -790,6 +975,14 @@ export class BattleEngine {
       mechanicTimer: BOSS_MECHANICS[this.dungeon.tierID ?? 'NORMAL'].timer || 8,
       vulnerableRemaining: 0,
       damageReduction: 0,
+      battleGoldReward: Math.round(
+        data.battleGoldReward *
+          (data.boss
+            ? 1 +
+              Math.floor((this.wave - 1) / 5) * 0.45 +
+              Math.max(0, this.dungeon.tierOrder) * 0.08
+            : this.dungeon.goldRewardMultiplier),
+      ),
       state: 'ALIVE',
     });
   }
@@ -997,6 +1190,7 @@ export class BattleEngine {
       tower.shots++;
       const data = getTowerById(tower.towerId)!,
         skill = TOWER_SKILLS[tower.towerId],
+        battleMod = this.battleUpgradeModifiers(tower),
         pierce = tower.empoweredShots > 0;
       if (pierce) tower.empoweredShots--;
       const chainBonus =
@@ -1008,7 +1202,7 @@ export class BattleEngine {
         TOWER_AFFINITIES[tower.towerId].includes('CHAIN')
           ? 2
           : 0);
-      this.projectiles.push({
+      const projectile: ProjectileRuntime = {
         runtimeId: this.id++,
         fromSlot: tower.slot,
         sourceTowerId: tower.runtimeId,
@@ -1020,10 +1214,22 @@ export class BattleEngine {
             tower.stats.penetration + (pierce ? target.defense * 0.8 : 0),
         },
         attackPattern: data.attackPattern,
-        maxTargets: pierce ? this.enemies.length : data.maxTargets + chainBonus,
-        bossDamageMultiplier: data.bossDamageMultiplier,
+        maxTargets: pierce
+          ? this.enemies.length
+          : data.maxTargets + chainBonus + (battleMod.maxTargets ?? 0),
+        bossDamageMultiplier:
+          data.bossDamageMultiplier * (1 + (battleMod.bossDamagePercent ?? 0)),
         skillPierce: pierce,
-      });
+        towerId: tower.towerId,
+        attackVFXID: data.attackVFXID,
+      };
+      this.projectiles.push(projectile);
+      if (this.hasBranchEffect(tower, 'DOUBLE_SHOT_5') && tower.shots % 5 === 0)
+        this.projectiles.push({
+          ...projectile,
+          runtimeId: this.id++,
+          remaining: projectile.remaining + 0.04,
+        });
       if (
         skill.effect === 'CHAIN_STORM' &&
         tower.skillActiveRemaining > 0 &&
@@ -1039,6 +1245,7 @@ export class BattleEngine {
     critical: boolean,
   ) {
     const mod = this.collectModifiers(tower);
+    const battleMod = this.battleUpgradeModifiers(tower);
     let value = 1;
     if (target.boss)
       value *=
@@ -1054,6 +1261,12 @@ export class BattleEngine {
       value *= 1 + (mod.aoeDamagePercent ?? 0);
     if (target.hp / target.maxHP < 0.18)
       value *= 1 + (mod.executeDamagePercent ?? 0);
+    if (projectile.attackPattern !== 'SINGLE')
+      value *= 1 + (battleMod.aoeDamagePercent ?? 0);
+    if (target.hp / target.maxHP < 0.18)
+      value *= 1 + (battleMod.executeDamagePercent ?? 0);
+    if (this.hasBranchEffect(tower, 'FOCUS_RAMP'))
+      value *= 1 + Math.min(0.28, tower.shots * 0.0025);
     if (target.statuses.includes('VULNERABLE')) value *= 1.55;
     if (
       target.statuses.includes('SHOCKED') &&
@@ -1080,9 +1293,9 @@ export class BattleEngine {
           e.supportAura > 0 &&
           Math.abs(e.progress - target.progress) < 0.14,
       ),
-      tower = this.deployed.find(
-        (t) => t.runtimeId === projectile.sourceTowerId,
-      );
+      tower =
+        this.deployed.find((t) => t.runtimeId === projectile.sourceTowerId) ??
+        this.retiredTowers.get(projectile.sourceTowerId);
     if (!tower) return;
     const result = resolveDamage(
         projectile.snapshot,
@@ -1178,12 +1391,33 @@ export class BattleEngine {
       }
     }
     this.projectiles = this.projectiles.filter((p) => p.remaining > 0);
+    for (const runtimeId of this.retiredTowers.keys())
+      if (!this.projectiles.some((p) => p.sourceTowerId === runtimeId))
+        this.retiredTowers.delete(runtimeId);
+  }
+  private rewardEnemyKill(enemy: EnemyRuntime) {
+    const multiplier = 1 + (this.baseModifiers().goldGainPercent ?? 0),
+      reward = Math.max(1, Math.round(enemy.battleGoldReward * multiplier));
+    this.changeGold(reward, enemy.boss ? 'Boss 擊破' : `${enemy.name} 擊破`);
+    this.goldEarned += reward;
+  }
+  private recordEconomyCheckpoint() {
+    const averageBattleLevel = this.deployed.length
+      ? this.deployed.reduce((sum, tower) => sum + tower.battleLevel, 0) /
+        this.deployed.length
+      : 0;
+    this.economyByWave[this.wave] = {
+      gold: this.battleGold,
+      towerCount: this.deployed.length,
+      averageBattleLevel,
+    };
   }
   private finalizeDeaths() {
     for (const enemy of this.enemies) {
       if (enemy.state !== 'DYING') continue;
       if (enemy.hp <= 0) {
         this.totalKills++;
+        this.rewardEnemyKill(enemy);
         const gain = enemy.boss ? 15 : enemy.elite ? 2 : 0.35;
         this.overdriveEnergy = Math.min(
           100,
@@ -1199,6 +1433,8 @@ export class BattleEngine {
   }
   private modifierStack() {
     const rows = ['BASE → LEVEL → STAR → CAREER'];
+    if (this.deployed.some((tower) => tower.battleLevel > 1))
+      rows.push('BATTLE LEVEL → BRANCH');
     if (this.synergies().length)
       rows.push(
         `SYNERGY · ${this.synergies()
@@ -1267,6 +1503,9 @@ export class BattleEngine {
   }
   debugFillOverdrive() {
     this.overdriveEnergy = 100;
+  }
+  debugAddGold(amount = 1000) {
+    this.changeGold(Math.max(0, Math.floor(amount)), 'DEBUG GOLD');
   }
   debugResetOverdrive() {
     this.overdriveEnergy = 0;

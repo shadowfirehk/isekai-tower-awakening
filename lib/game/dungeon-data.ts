@@ -47,6 +47,7 @@ export const ENEMY_CATALOG: Record<EnemyId, EnemyData> = {
     speed: 0.07,
     baseDamage: 1,
     reward: 2,
+    battleGoldReward: 10,
     boss: false,
     archetype: 'GRUNT',
     ...art('EARTH_GRUNT'),
@@ -59,6 +60,7 @@ export const ENEMY_CATALOG: Record<EnemyId, EnemyData> = {
     speed: 0.105,
     baseDamage: 1,
     reward: 3,
+    battleGoldReward: 12,
     boss: false,
     archetype: 'RUNNER',
     ...art('EARTH_RUNNER'),
@@ -71,6 +73,7 @@ export const ENEMY_CATALOG: Record<EnemyId, EnemyData> = {
     speed: 0.043,
     baseDamage: 1,
     reward: 6,
+    battleGoldReward: 20,
     boss: false,
     archetype: 'TANK',
     ...art('EARTH_TANK'),
@@ -83,6 +86,7 @@ export const ENEMY_CATALOG: Record<EnemyId, EnemyData> = {
     speed: 0.06,
     baseDamage: 2,
     reward: 8,
+    battleGoldReward: 30,
     boss: false,
     archetype: 'ELITE',
     elite: true,
@@ -96,6 +100,7 @@ export const ENEMY_CATALOG: Record<EnemyId, EnemyData> = {
     speed: 0.052,
     baseDamage: 2,
     reward: 9,
+    battleGoldReward: 25,
     boss: false,
     archetype: 'SHIELDED',
     shieldPercent: 0.55,
@@ -109,6 +114,7 @@ export const ENEMY_CATALOG: Record<EnemyId, EnemyData> = {
     speed: 0.055,
     baseDamage: 2,
     reward: 10,
+    battleGoldReward: 25,
     boss: false,
     archetype: 'REGENERATING',
     regenerationPercent: 0.025,
@@ -122,6 +128,7 @@ export const ENEMY_CATALOG: Record<EnemyId, EnemyData> = {
     speed: 0.058,
     baseDamage: 2,
     reward: 10,
+    battleGoldReward: 30,
     boss: false,
     archetype: 'SUPPORT',
     supportAura: 0.2,
@@ -135,6 +142,7 @@ export const ENEMY_CATALOG: Record<EnemyId, EnemyData> = {
     speed: 0.032,
     baseDamage: 5,
     reward: 25,
+    battleGoldReward: 100,
     boss: true,
     archetype: 'BOSS',
     ...art('EARTH_BOSS'),
@@ -226,6 +234,9 @@ export interface DungeonConfig {
   tierOrder: number;
   totalWaves: number;
   startingBaseHP: number;
+  startingGold: number;
+  goldRewardMultiplier: number;
+  slotCount: number;
   deploymentCap: number;
   hpMultiplier: number;
   defenseMultiplier: number;
@@ -244,7 +255,10 @@ export const EARTH_TUTORIAL_DUNGEON: DungeonConfig = {
   tierOrder: -1,
   totalWaves: 25,
   startingBaseHP: 20,
-  deploymentCap: 3,
+  startingGold: 420,
+  goldRewardMultiplier: 0.4,
+  slotCount: 7,
+  deploymentCap: 7,
   hpMultiplier: 1,
   defenseMultiplier: 1,
   speedMultiplier: 1,
@@ -263,7 +277,10 @@ export function getEarthDungeon(tierID: EarthTierId): DungeonConfig {
     tierOrder: tier.order,
     totalWaves: 25,
     startingBaseHP: 20,
-    deploymentCap: tier.deploymentCap,
+    startingGold: 450 + tier.order * 25,
+    goldRewardMultiplier: 0.42 + tier.order * 0.015,
+    slotCount: 7,
+    deploymentCap: 7,
     hpMultiplier: tier.hpMultiplier,
     defenseMultiplier: tier.defenseMultiplier,
     speedMultiplier: tier.speedMultiplier,

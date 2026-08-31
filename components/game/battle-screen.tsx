@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   Bolt,
   BrainCircuit,
+  CircleDollarSign,
   ChevronRight,
   Crosshair,
   Eye,
@@ -20,6 +21,7 @@ import {
   Sparkles,
   TowerControl,
   TrendingUp,
+  Wrench,
   Zap,
 } from 'lucide-react';
 import {
@@ -44,7 +46,11 @@ import { EarthProgressionService } from '@/lib/game/earth-progression-service';
 import { getMaterialData } from '@/lib/game/materials';
 import { RewardService } from '@/lib/game/reward-service';
 import { getTowerById, STARTER_TOWER_ID } from '@/lib/game/towers';
-import { ENEMY_VISUAL_PROFILES } from '@/lib/game/visual-config';
+import { getBattleBranch, getBattleBranches } from '@/lib/game/battle-economy';
+import {
+  ENEMY_VISUAL_PROFILES,
+  getBattleEnvironmentProfile,
+} from '@/lib/game/visual-config';
 import {
   EarthTierId,
   MaterialReward,
@@ -71,6 +77,7 @@ const SLOT_LAYOUTS: Record<MapTopology, Array<{ x: number; y: number }>> = {
     { x: 58, y: 43 },
     { x: 72, y: 48 },
     { x: 84, y: 57 },
+    { x: 54, y: 76 },
   ],
   MERGE: [
     { x: 18, y: 32 },
@@ -79,6 +86,7 @@ const SLOT_LAYOUTS: Record<MapTopology, Array<{ x: number; y: number }>> = {
     { x: 54, y: 42 },
     { x: 69, y: 64 },
     { x: 84, y: 48 },
+    { x: 66, y: 25 },
   ],
   PARALLEL: [
     { x: 18, y: 27 },
@@ -87,6 +95,7 @@ const SLOT_LAYOUTS: Record<MapTopology, Array<{ x: number; y: number }>> = {
     { x: 40, y: 73 },
     { x: 66, y: 38 },
     { x: 82, y: 58 },
+    { x: 60, y: 76 },
   ],
   CORE_SIEGE: [
     { x: 23, y: 25 },
@@ -95,6 +104,7 @@ const SLOT_LAYOUTS: Record<MapTopology, Array<{ x: number; y: number }>> = {
     { x: 47, y: 80 },
     { x: 70, y: 32 },
     { x: 70, y: 68 },
+    { x: 87, y: 50 },
   ],
 };
 function pathPoint(progress: number, topology: MapTopology, branch = 0) {
@@ -144,9 +154,7 @@ export function BattleScreen({
   onUpgrade,
 }: BattleScreenProps) {
   const dungeon = tierID ? getEarthDungeon(tierID) : EARTH_TUTORIAL_DUNGEON;
-  const loadout = tierID
-    ? save.earthLoadout
-    : [STARTER_TOWER_ID, ...GOLDEN_TUTORIAL_LOADOUT];
+  const loadout = tierID ? save.earthLoadout : GOLDEN_TUTORIAL_LOADOUT;
   const [deployTowerID, setDeployTowerID] = useState<TowerId>(
     loadout[0] ?? STARTER_TOWER_ID,
   );
@@ -166,6 +174,10 @@ export function BattleScreen({
   const [rewardError, setRewardError] = useState('');
   const [feedback, setFeedback] = useState('');
   const [showBuild, setShowBuild] = useState(false);
+  const [branchChoice, setBranchChoice] = useState<{
+    runtimeId: number;
+    level: 3 | 5;
+  } | null>(null);
   const resultCommitted = useRef(false);
   const historyRecorded = useRef(false);
   const sync = useCallback(() => setSnapshot(engineRef.current.snapshot()), []);
@@ -256,12 +268,28 @@ export function BattleScreen({
   const deploy = (slot: number) => {
     const result = engineRef.current.deploy(slot, deployTowerID);
     sync();
-    if (result.ok)
+    if (result.ok) {
       setSelectedTower(
         engineRef.current.snapshot().deployed.find((t) => t.slot === slot)
           ?.runtimeId ?? null,
       );
-    else setFeedback(result.error);
+      setFeedback(`部署完成 · -${result.spent} Gold`);
+    } else setFeedback(result.error);
+  };
+  const upgradeSelected = () => {
+    if (!selected) return;
+    const nextLevel = selected.battleLevel + 1;
+    if (nextLevel === 3 || nextLevel === 5) {
+      setBranchChoice({ runtimeId: selected.runtimeId, level: nextLevel });
+      return;
+    }
+    const result = engineRef.current.upgradeTower(selected.runtimeId);
+    sync();
+    setFeedback(
+      result.ok
+        ? `Battle Lv.${result.battleLevel} · -${result.spent} Gold`
+        : result.error,
+    );
   };
   const restart = () => {
     engineRef.current = new BattleEngine(save, dungeon);
@@ -274,6 +302,7 @@ export function BattleScreen({
     setSelectedEnemyID(null);
     setRewardError('');
     setSelectedTower(null);
+    setBranchChoice(null);
     setShowBuild(false);
     sync();
   };
@@ -283,12 +312,24 @@ export function BattleScreen({
       snapshot.enemies.find((e) => e.runtimeId === selectedEnemyID) ?? null,
     activeBoss = snapshot.enemies.find((e) => e.boss) ?? null,
     terminal = snapshot.state === 'VICTORY' || snapshot.state === 'DEFEAT',
-    slots = SLOT_LAYOUTS[snapshot.mapTopology],
+    slots = SLOT_LAYOUTS[snapshot.mapTopology].slice(0, snapshot.slotCapacity),
     selectedSkill = selected ? TOWER_SKILLS[selected.towerId] : null,
-    anyOverdrive = snapshot.deployed.some((t) => t.overdriveRemaining > 0);
+    anyOverdrive = snapshot.deployed.some((t) => t.overdriveRemaining > 0),
+    environment = getBattleEnvironmentProfile(tierID ?? null),
+    sovereignPhase = tierID === 'SOVEREIGN' ? (activeBoss?.phase ?? 1) : 0,
+    selectedBuildCost = snapshot.buildCosts[deployTowerID] ?? 0,
+    branchTower = branchChoice
+      ? (snapshot.deployed.find(
+          (tower) => tower.runtimeId === branchChoice.runtimeId,
+        ) ?? null)
+      : null,
+    branchOptions =
+      branchChoice && branchTower
+        ? getBattleBranches(branchTower.towerId, branchChoice.level)
+        : [];
   return (
     <section
-      className={`battle-screen phase-screen tactical-battle topology-${snapshot.mapTopology.toLowerCase()} ${anyOverdrive ? 'overdrive-active' : ''}`}
+      className={`battle-screen phase-screen tactical-battle topology-${snapshot.mapTopology.toLowerCase()} environment-${environment.family.toLowerCase()} ${activeBoss ? 'boss-atmosphere' : ''} sovereign-phase-${sovereignPhase} ${anyOverdrive ? 'overdrive-active' : ''}`}
       aria-label={`25 波${dungeon.name}`}
     >
       <header className="battle-hud">
@@ -324,6 +365,19 @@ export function BattleScreen({
             />
           </i>
         </div>
+        <div className="battle-gold" aria-label="本場戰鬥 Gold">
+          <CircleDollarSign />
+          <span>
+            <small>BATTLE GOLD</small>
+            <b>{snapshot.battleGold.toLocaleString()}</b>
+          </span>
+          {snapshot.goldEvent && (
+            <em key={snapshot.goldEvent.serial}>
+              {snapshot.goldEvent.amount > 0 ? '+' : ''}
+              {snapshot.goldEvent.amount}
+            </em>
+          )}
+        </div>
         <button
           onClick={() => {
             engineRef.current.togglePause();
@@ -344,6 +398,19 @@ export function BattleScreen({
         </button>
       </header>
       <div className="battlefield">
+        <div
+          className="battle-environment"
+          style={{
+            backgroundImage: `url('${environment.background}')`,
+            backgroundPosition: environment.backgroundPosition,
+          }}
+          aria-hidden="true"
+        />
+        <div className="environment-atmosphere" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </div>
         <div className="map-grid" aria-hidden="true" />
         <div
           className={`battle-path path-${snapshot.mapTopology.toLowerCase()}`}
@@ -404,7 +471,7 @@ export function BattleScreen({
           return (
             <button
               key={slot}
-              className={`deploy-slot ${tower ? 'occupied' : ''} ${tower?.runtimeId === selectedTower ? 'selected' : ''} ${tower?.fortifyLevel ? `fortified fortify-${tower.fortifyLevel}` : ''} ${tower?.overdriveRemaining ? 'tower-overdrive' : ''}`}
+              className={`deploy-slot ${tower ? 'occupied' : 'deployment-node'} ${!tower && snapshot.battleGold >= selectedBuildCost ? 'affordable' : ''} ${!tower && snapshot.battleGold < selectedBuildCost ? 'unaffordable' : ''} ${tower?.runtimeId === selectedTower ? 'selected' : ''} ${tower?.fortifyLevel ? `fortified fortify-${tower.fortifyLevel}` : ''} ${tower?.overdriveRemaining ? 'tower-overdrive' : ''}`}
               style={{ left: `${point.x}%`, top: `${point.y}%` }}
               onClick={() =>
                 tower ? setSelectedTower(tower.runtimeId) : deploy(slot)
@@ -412,7 +479,15 @@ export function BattleScreen({
             >
               {tower ? (
                 <>
-                  <TowerArtwork towerID={tower.towerId} />
+                  <TowerArtwork
+                    towerID={tower.towerId}
+                    stars={tower.permanentStars}
+                    battleLevel={tower.battleLevel}
+                    branchLv3={tower.branchLv3}
+                    branchLv5={tower.branchLv5}
+                    overdrive={tower.overdriveRemaining > 0}
+                    spawning={tower.spawnEffectRemaining > 0}
+                  />
                   {tower.fortifyLevel > 0 && (
                     <i className="fortify-mark">
                       <ShieldCheck />
@@ -423,8 +498,13 @@ export function BattleScreen({
                 </>
               ) : (
                 <>
-                  <b>+</b>
-                  <small>DEPLOY</small>
+                  <i className="node-circuit" />
+                  <TowerControl />
+                  <small>
+                    {snapshot.battleGold >= selectedBuildCost
+                      ? 'DEPLOY'
+                      : 'NO GOLD'}
+                  </small>
                 </>
               )}
             </button>
@@ -487,7 +567,7 @@ export function BattleScreen({
           return (
             <i
               key={projectile.runtimeId}
-              className={`projectile ${projectile.skillPierce ? 'piercing' : ''}`}
+              className={`projectile vfx-${projectile.towerId.toLowerCase()} pattern-${projectile.attackPattern.toLowerCase()} ${projectile.skillPierce ? 'piercing' : ''}`}
               style={{ left: `${point.x}%`, top: `${point.y}%` }}
             />
           );
@@ -574,7 +654,7 @@ export function BattleScreen({
       <aside className="deployment-panel tactical-panel">
         <p>
           <TowerControl />
-          DEPLOYMENT · {snapshot.deployed.length} / {dungeon.deploymentCap}
+          DEPLOYMENT · {snapshot.deployed.length} / {snapshot.slotCapacity}
           <em>{snapshot.mapTopology}</em>
         </p>
         {loadout.map((id) => {
@@ -585,9 +665,12 @@ export function BattleScreen({
               key={id}
               className={`tower-chip ${deployTowerID === id ? 'active' : ''}`}
               onClick={() => setDeployTowerID(id)}
-              disabled={snapshot.deployed.length >= dungeon.deploymentCap}
+              disabled={
+                snapshot.deployed.length >= snapshot.slotCapacity ||
+                snapshot.battleGold < (snapshot.buildCosts[id] ?? 0)
+              }
             >
-              <TowerArtwork towerID={id} />
+              <TowerArtwork towerID={id} stars={owned?.stars ?? 1} />
               <span>
                 <b>{tower?.name}</b>
                 <small>
@@ -595,7 +678,9 @@ export function BattleScreen({
                   · {owned?.stars ?? 1}★
                 </small>
               </span>
-              <em>{deployTowerID === id ? 'SELECT' : '∞'}</em>
+              <em>
+                <CircleDollarSign /> {snapshot.buildCosts[id] ?? 0}
+              </em>
             </button>
           );
         })}
@@ -609,12 +694,17 @@ export function BattleScreen({
               <b>{getTowerById(selected.towerId)?.name}</b>
               <button
                 onClick={() => {
-                  engineRef.current.retreat(selected.runtimeId);
-                  setSelectedTower(null);
+                  const result = engineRef.current.sellTower(
+                    selected.runtimeId,
+                  );
+                  if (result.ok) {
+                    setSelectedTower(null);
+                    setFeedback(`出售完成 · +${result.refund} Gold`);
+                  } else setFeedback(result.error);
                   sync();
                 }}
               >
-                撤回
+                出售 +{Math.floor(selected.investedGold * 0.7)}
               </button>
             </header>
             <div>
@@ -625,9 +715,46 @@ export function BattleScreen({
                 SPD <b>{selected.stats.attackSpeed.toFixed(2)}</b>
               </span>
               <span>
-                FORTIFY <b>{selected.fortifyLevel}/2</b>
+                BATTLE LV <b>{selected.battleLevel}/5</b>
               </span>
             </div>
+            <section className="tower-growth-panel">
+              <div>
+                <small>PERMANENT BUILD</small>
+                <b>
+                  Lv.{selected.permanentLevel} · {selected.permanentStars}★
+                </b>
+                <span>
+                  {getBattleBranch(selected.towerId, selected.branchLv3)
+                    ?.displayName ?? 'Lv.3 分支未選'}
+                  {' · '}
+                  {getBattleBranch(selected.towerId, selected.branchLv5)
+                    ?.displayName ?? 'Lv.5 分支未選'}
+                </span>
+              </div>
+              <button
+                className="battle-upgrade-button"
+                disabled={
+                  selected.battleLevel >= 5 ||
+                  snapshot.battleGold < selected.nextUpgradeCost
+                }
+                onClick={upgradeSelected}
+              >
+                <Wrench />
+                <span>
+                  <small>
+                    {selected.battleLevel >= 5
+                      ? 'MAX BATTLE LEVEL'
+                      : `UPGRADE TO LV.${selected.battleLevel + 1}`}
+                  </small>
+                  <b>
+                    {selected.battleLevel >= 5
+                      ? '完成'
+                      : `${selected.nextUpgradeCost} Gold`}
+                  </b>
+                </span>
+              </button>
+            </section>
             <button
               className={`tower-skill-button ${selected.skillActiveRemaining > 0 ? 'active' : ''}`}
               disabled={
@@ -856,10 +983,64 @@ export function BattleScreen({
           </div>
         </section>
       )}
+      {branchChoice && branchTower && (
+        <section className="branch-choice-overlay">
+          <div>
+            <header>
+              <Wrench />
+              <span>
+                <small>BATTLE LV.{branchChoice.level} BRANCH</small>
+                <h2>{getTowerById(branchTower.towerId)?.name} 戰鬥進化</h2>
+                <p>本次選擇只在這場戰鬥生效，重新挑戰後會重置。</p>
+              </span>
+              <button onClick={() => setBranchChoice(null)}>×</button>
+            </header>
+            <div>
+              {branchOptions.map((option, index) => (
+                <button
+                  key={option.branchID}
+                  className={`branch-card branch-${index === 0 ? 'a' : 'b'}`}
+                  onClick={() => {
+                    const result = engineRef.current.upgradeTower(
+                      branchTower.runtimeId,
+                      option.branchID,
+                    );
+                    sync();
+                    if (result.ok) {
+                      setBranchChoice(null);
+                      setFeedback(
+                        `${option.displayName} · Battle Lv.${result.battleLevel} · -${result.spent} Gold`,
+                      );
+                    } else setFeedback(result.error);
+                  }}
+                >
+                  <TowerArtwork
+                    towerID={branchTower.towerId}
+                    stars={branchTower.permanentStars}
+                    battleLevel={branchChoice.level}
+                    branchLv3={
+                      branchChoice.level === 3
+                        ? option.branchID
+                        : branchTower.branchLv3
+                    }
+                    branchLv5={
+                      branchChoice.level === 5 ? option.branchID : null
+                    }
+                  />
+                  <small>ROUTE {index === 0 ? 'A' : 'B'}</small>
+                  <h3>{option.displayName}</h3>
+                  <p>{option.description}</p>
+                  <b>{branchTower.nextUpgradeCost} Gold</b>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
       {feedback && <output className="battle-feedback">{feedback}</output>}
       {debugMode && (
         <aside className="battle-debug phase7-debug">
-          <p>DEV · PHASE 7.5</p>
+          <p>DEV · PHASE 7.7</p>
           <div>
             {[1, 5, 10, 15, 20, 25].map((wave) => (
               <button
@@ -872,6 +1053,14 @@ export function BattleScreen({
                 W{wave}
               </button>
             ))}
+            <button
+              onClick={() => {
+                engineRef.current.debugAddGold();
+                sync();
+              }}
+            >
+              +1000 GOLD
+            </button>
             <button
               onClick={() => {
                 engineRef.current.debugKillAll();
@@ -1044,6 +1233,19 @@ export function BattleScreen({
               </span>
               <span>
                 SKILLS <b>{snapshot.metrics.skillUses}</b>
+              </span>
+              <span>
+                GOLD + / -{' '}
+                <b>
+                  {snapshot.metrics.goldEarned} / {snapshot.metrics.goldSpent}
+                </b>
+              </span>
+              <span>
+                BUILD / UP{' '}
+                <b>
+                  {snapshot.metrics.buildPurchases} /{' '}
+                  {snapshot.metrics.upgradePurchases}
+                </b>
               </span>
               <span>
                 OVERDRIVE <b>{snapshot.metrics.overdriveUses}</b>

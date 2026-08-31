@@ -225,10 +225,21 @@ export interface TowerData {
   attackPattern: 'SINGLE' | 'AOE' | 'CHAIN';
   maxTargets: number;
   bossDamageMultiplier: number;
+  battleBuildCost: number;
   artwork: string;
   artIndex: number;
   roleIcon: string;
   revealVFXID: string;
+  battlePrefab: string;
+  battleSprite: string;
+  towerPortrait: string;
+  collectionArtwork: string;
+  battleIcon: string;
+  silhouette: string;
+  starVisualProfile: string;
+  battleUpgradeVisualProfile: string;
+  attackVFXID: string;
+  spawnVFXID: string;
 }
 
 export interface FinalTowerStats extends TowerBaseStats {
@@ -244,6 +255,7 @@ export interface EnemyData {
   speed: number;
   baseDamage: number;
   reward: number;
+  battleGoldReward: number;
   boss: boolean;
   archetype:
     | 'GRUNT'

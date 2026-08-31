@@ -207,6 +207,9 @@ export interface BlessingModifiers {
   overdriveGainPercent?: number;
   executeDamagePercent?: number;
   baseDamageReduction?: number;
+  goldGainPercent?: number;
+  buildCostReduction?: number;
+  upgradeCostReduction?: number;
 }
 export interface BattleBlessingData {
   blessingID: string;
@@ -514,6 +517,37 @@ export const BATTLE_BLESSINGS: BattleBlessingData[] = [
     { critDamagePercent: 0.7, overdriveGainPercent: 0.25, attackPenalty: 0.1 },
     undefined,
     '基礎攻擊 -10%',
+  ),
+  blessing(
+    'B_BOUNTY_HUNTER',
+    '賞金獵人',
+    '敵人擊破金幣 +15%。',
+    'COMMON',
+    'GENERAL_POWER',
+    ['GENERAL'],
+    2,
+    { goldGainPercent: 0.15 },
+    ['賞金獵人 I', '賞金獵人 II'],
+  ),
+  blessing(
+    'B_EFFICIENT_BUILD',
+    '高效建造',
+    '本場炮塔建造成本 -10%。',
+    'RARE',
+    'TRANSFORMER',
+    ['GENERAL'],
+    1,
+    { buildCostReduction: 0.1 },
+  ),
+  blessing(
+    'B_TACTICAL_INVESTMENT',
+    '戰術投資',
+    '本場炮塔戰鬥升級成本 -12%。',
+    'RARE',
+    'TRANSFORMER',
+    ['GENERAL'],
+    1,
+    { upgradeCostReduction: 0.12 },
   ),
 ];
 

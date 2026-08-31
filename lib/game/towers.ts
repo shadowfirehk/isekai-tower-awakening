@@ -1,43 +1,310 @@
-import { EarthTierId, PlayerSave, RealmType, TowerData, TowerId } from './types';
+import {
+  EarthTierId,
+  PlayerSave,
+  RealmType,
+  TowerData,
+  TowerId,
+} from './types';
+import { battleBuildCost } from './battle-economy';
 
 export const STARTER_TOWER_ID: TowerId = 'EARTH_BASIC_AUTO_TURRET';
 
-type TowerSeed = [TowerId, string, string, EarthTierId, number, number, number, number, number, TowerData['attackPattern'], number, number, string[]];
+type TowerSeed = [
+  TowerId,
+  string,
+  string,
+  EarthTierId,
+  number,
+  number,
+  number,
+  number,
+  number,
+  TowerData['attackPattern'],
+  number,
+  number,
+  string[],
+];
 const SEEDS: TowerSeed[] = [
-  ['EARTH_BASIC_AUTO_TURRET','大地自動炮塔','EARTH AUTO TURRET','NORMAL',100,1,6,0,.05,'SINGLE',1,1,['基礎','單體']],
-  ['EARTH_RAPID_FIRE_TURRET','高速連射炮塔','RAPID FIRE TURRET','RARE',125,1.85,6.2,4,.06,'SINGLE',1,1,['連射','高速']],
-  ['EARTH_ARMOR_PIERCING_TURRET','穿甲炮塔','ARMOR PIERCING TURRET','SCARCE',250,.8,7.2,48,.08,'SINGLE',1,1.1,['穿甲','重擊']],
-  ['EARTH_BLAST_TURRET','爆裂炮塔','BLAST TURRET','EPIC',420,.72,6.4,20,.08,'AOE',3,1.08,['範圍','爆裂']],
-  ['EARTH_THUNDER_TURRET','雷霆炮塔','THUNDER TURRET','LEGENDARY',700,1.08,7,34,.1,'CHAIN',3,1.12,['連鎖','雷霆']],
-  ['EARTH_DIVINE_JUDGMENT_TURRET','神聖裁決炮塔','DIVINE JUDGMENT TURRET','MYTHIC',1120,.68,8.2,75,.12,'SINGLE',1,1.75,['頭目特攻','裁決']],
-  ['EARTH_PHANTOM_TURRET','虛影炮塔','PHANTOM TURRET','SECRET',1800,1.35,7.4,95,.28,'SINGLE',1,1.25,['暴擊','秘影']],
-  ['EARTH_KING_AUTHORITY_TURRET','王權炮塔','KING AUTHORITY TURRET','KING',2900,1.1,7.8,150,.16,'AOE',3,1.35,['王權','範圍']],
-  ['EARTH_EMPEROR_ANNIHILATION_TURRET','帝皇殲滅炮塔','EMPEROR ANNIHILATION TURRET','EMPEROR',4700,.88,8.4,300,.18,'CHAIN',4,1.45,['殲滅','穿甲']],
-  ['EARTH_VENERABLE_TURRET','至尊炮塔','VENERABLE TURRET','VENERABLE',7600,1.12,8.2,440,.2,'AOE',4,1.55,['至尊','混合']],
-  ['EARTH_SAINT_DOMAIN_TURRET','聖域炮塔','SAINT DOMAIN TURRET','SAINT',12200,.92,9,650,.22,'CHAIN',5,2,['聖域','頭目特攻']],
-  ['EARTH_SOVEREIGN_END_TURRET','帝境終焉炮塔','SOVEREIGN END TURRET','SOVEREIGN',19800,1.18,9.5,900,.25,'AOE',6,2.3,['終焉','全域']],
+  [
+    'EARTH_BASIC_AUTO_TURRET',
+    '大地自動炮塔',
+    'EARTH AUTO TURRET',
+    'NORMAL',
+    100,
+    1,
+    6,
+    0,
+    0.05,
+    'SINGLE',
+    1,
+    1,
+    ['基礎', '單體'],
+  ],
+  [
+    'EARTH_RAPID_FIRE_TURRET',
+    '高速連射炮塔',
+    'RAPID FIRE TURRET',
+    'RARE',
+    125,
+    1.85,
+    6.2,
+    4,
+    0.06,
+    'SINGLE',
+    1,
+    1,
+    ['連射', '高速'],
+  ],
+  [
+    'EARTH_ARMOR_PIERCING_TURRET',
+    '穿甲炮塔',
+    'ARMOR PIERCING TURRET',
+    'SCARCE',
+    250,
+    0.8,
+    7.2,
+    48,
+    0.08,
+    'SINGLE',
+    1,
+    1.1,
+    ['穿甲', '重擊'],
+  ],
+  [
+    'EARTH_BLAST_TURRET',
+    '爆裂炮塔',
+    'BLAST TURRET',
+    'EPIC',
+    420,
+    0.72,
+    6.4,
+    20,
+    0.08,
+    'AOE',
+    3,
+    1.08,
+    ['範圍', '爆裂'],
+  ],
+  [
+    'EARTH_THUNDER_TURRET',
+    '雷霆炮塔',
+    'THUNDER TURRET',
+    'LEGENDARY',
+    700,
+    1.08,
+    7,
+    34,
+    0.1,
+    'CHAIN',
+    3,
+    1.12,
+    ['連鎖', '雷霆'],
+  ],
+  [
+    'EARTH_DIVINE_JUDGMENT_TURRET',
+    '神聖裁決炮塔',
+    'DIVINE JUDGMENT TURRET',
+    'MYTHIC',
+    1120,
+    0.68,
+    8.2,
+    75,
+    0.12,
+    'SINGLE',
+    1,
+    1.75,
+    ['頭目特攻', '裁決'],
+  ],
+  [
+    'EARTH_PHANTOM_TURRET',
+    '虛影炮塔',
+    'PHANTOM TURRET',
+    'SECRET',
+    1800,
+    1.35,
+    7.4,
+    95,
+    0.28,
+    'SINGLE',
+    1,
+    1.25,
+    ['暴擊', '秘影'],
+  ],
+  [
+    'EARTH_KING_AUTHORITY_TURRET',
+    '王權炮塔',
+    'KING AUTHORITY TURRET',
+    'KING',
+    2900,
+    1.1,
+    7.8,
+    150,
+    0.16,
+    'AOE',
+    3,
+    1.35,
+    ['王權', '範圍'],
+  ],
+  [
+    'EARTH_EMPEROR_ANNIHILATION_TURRET',
+    '帝皇殲滅炮塔',
+    'EMPEROR ANNIHILATION TURRET',
+    'EMPEROR',
+    4700,
+    0.88,
+    8.4,
+    300,
+    0.18,
+    'CHAIN',
+    4,
+    1.45,
+    ['殲滅', '穿甲'],
+  ],
+  [
+    'EARTH_VENERABLE_TURRET',
+    '至尊炮塔',
+    'VENERABLE TURRET',
+    'VENERABLE',
+    7600,
+    1.12,
+    8.2,
+    440,
+    0.2,
+    'AOE',
+    4,
+    1.55,
+    ['至尊', '混合'],
+  ],
+  [
+    'EARTH_SAINT_DOMAIN_TURRET',
+    '聖域炮塔',
+    'SAINT DOMAIN TURRET',
+    'SAINT',
+    12200,
+    0.92,
+    9,
+    650,
+    0.22,
+    'CHAIN',
+    5,
+    2,
+    ['聖域', '頭目特攻'],
+  ],
+  [
+    'EARTH_SOVEREIGN_END_TURRET',
+    '帝境終焉炮塔',
+    'SOVEREIGN END TURRET',
+    'SOVEREIGN',
+    19800,
+    1.18,
+    9.5,
+    900,
+    0.25,
+    'AOE',
+    6,
+    2.3,
+    ['終焉', '全域'],
+  ],
 ];
 
-export const TOWER_CATALOG = Object.fromEntries(SEEDS.map((seed,artIndex) => {
-  const [id,name,englishName,tierID,attack,attackSpeed,range,penetration,critChance,attackPattern,maxTargets,bossDamageMultiplier,roleTags] = seed;
-  const data: TowerData = {
-    id,name,englishName,tierID,rarity:tierID,realm:RealmType.Earth,
-    description:`${name}以${roleTags.join('、')}為核心定位，適合地球 ${tierID} 階防線。`,
-    baseStats:{ attack, defense:50, maxHP:500, attackSpeed, range, critChance, critDamage:1.6, accuracy:1, penetration },
-    scaleAttackSpeedWithStars:id === 'EARTH_RAPID_FIRE_TURRET',roleTags,attackPattern,maxTargets,bossDamageMultiplier,
-    artwork:'/assets/earth-tower-atlas.png',artIndex,roleIcon:roleTags[0],revealVFXID:`VFX_TOWER_${tierID}_REVEAL`,
-  };
-  return [id,data];
-})) as Record<TowerId,TowerData>;
+export const TOWER_CATALOG = Object.fromEntries(
+  SEEDS.map((seed, artIndex) => {
+    const [
+      id,
+      name,
+      englishName,
+      tierID,
+      attack,
+      attackSpeed,
+      range,
+      penetration,
+      critChance,
+      attackPattern,
+      maxTargets,
+      bossDamageMultiplier,
+      roleTags,
+    ] = seed;
+    const data: TowerData = {
+      id,
+      name,
+      englishName,
+      tierID,
+      rarity: tierID,
+      realm: RealmType.Earth,
+      description: `${name}以${roleTags.join('、')}為核心定位，適合地球 ${tierID} 階防線。`,
+      baseStats: {
+        attack,
+        defense: 50,
+        maxHP: 500,
+        attackSpeed,
+        range,
+        critChance,
+        critDamage: 1.6,
+        accuracy: 1,
+        penetration,
+      },
+      scaleAttackSpeedWithStars: id === 'EARTH_RAPID_FIRE_TURRET',
+      roleTags,
+      attackPattern,
+      maxTargets,
+      bossDamageMultiplier,
+      battleBuildCost: battleBuildCost(id),
+      artwork: '/assets/earth-tower-atlas.png',
+      artIndex,
+      roleIcon: roleTags[0],
+      revealVFXID: `VFX_TOWER_${tierID}_REVEAL`,
+      battlePrefab: `PREFAB_${id}`,
+      battleSprite: `SPRITE_${id}`,
+      towerPortrait: `PORTRAIT_${id}`,
+      collectionArtwork: `COLLECTION_${id}`,
+      battleIcon: `ICON_${id}`,
+      silhouette: `SILHOUETTE_${id}`,
+      starVisualProfile: `STAR_VISUAL_${tierID}`,
+      battleUpgradeVisualProfile: `BATTLE_UPGRADE_${id}`,
+      attackVFXID: `VFX_ATTACK_${id}`,
+      spawnVFXID: `VFX_SPAWN_${tierID}`,
+    };
+    return [id, data];
+  }),
+) as Record<TowerId, TowerData>;
 
-export function getTowerById(id: TowerId | null | undefined): TowerData | null { return id ? TOWER_CATALOG[id] ?? null : null; }
-export function getTowerForTier(tierID: EarthTierId) { return Object.values(TOWER_CATALOG).find(tower => tower.tierID === tierID) ?? null; }
-export function grantTower(save: PlayerSave, towerID: TowerId, now = new Date().toISOString()): PlayerSave {
-  if (save.ownedTowers.some(tower => tower.towerID === towerID)) return save;
-  return { ...save, ownedTowers:[...save.ownedTowers,{towerID,level:1,stars:1,unlocked:true,obtainedAt:now}] };
+export function getTowerById(id: TowerId | null | undefined): TowerData | null {
+  return id ? (TOWER_CATALOG[id] ?? null) : null;
 }
-export function grantStarterTower(save: PlayerSave, now = new Date().toISOString()): PlayerSave {
+export function getTowerForTier(tierID: EarthTierId) {
+  return (
+    Object.values(TOWER_CATALOG).find((tower) => tower.tierID === tierID) ??
+    null
+  );
+}
+export function grantTower(
+  save: PlayerSave,
+  towerID: TowerId,
+  now = new Date().toISOString(),
+): PlayerSave {
+  if (save.ownedTowers.some((tower) => tower.towerID === towerID)) return save;
+  return {
+    ...save,
+    ownedTowers: [
+      ...save.ownedTowers,
+      { towerID, level: 1, stars: 1, unlocked: true, obtainedAt: now },
+    ],
+  };
+}
+export function grantStarterTower(
+  save: PlayerSave,
+  now = new Date().toISOString(),
+): PlayerSave {
   if (save.starterTowerRewardClaimed) return save;
-  return { ...grantTower(save,STARTER_TOWER_ID,now), starterTowerRewardClaimed:true };
+  return {
+    ...grantTower(save, STARTER_TOWER_ID, now),
+    starterTowerRewardClaimed: true,
+  };
 }
-export function getOwnedTower(save: PlayerSave, towerId: TowerId) { return save.ownedTowers.find(tower => tower.towerID === towerId && tower.unlocked) ?? null; }
+export function getOwnedTower(save: PlayerSave, towerId: TowerId) {
+  return (
+    save.ownedTowers.find(
+      (tower) => tower.towerID === towerId && tower.unlocked,
+    ) ?? null
+  );
+}
