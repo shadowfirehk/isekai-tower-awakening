@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 import {
   ArrowLeft,
   Crosshair,
@@ -13,6 +15,7 @@ import {
 } from 'lucide-react';
 import { EARTH_TIER_IDS, EnemyId, PlayerSave, TowerId } from '@/lib/game/types';
 import { TOWER_CATALOG } from '@/lib/game/towers';
+import { TOWER_ATTACK_PROFILES } from '@/lib/game/battle-readability';
 import {
   BATTLE_ENVIRONMENT_PROFILES,
   BOSS_VISUAL_PROFILES,
@@ -38,6 +41,12 @@ export function VisualGallery({
   save: PlayerSave;
   onBack: () => void;
 }) {
+  const [vfxSpeed, setVfxSpeed] = useState(1);
+  const [vfxMode, setVfxMode] = useState<'normal' | 'crit' | 'skill' | 'od'>(
+    'normal',
+  );
+  const [showDummy, setShowDummy] = useState(true);
+  const [replayKey, setReplayKey] = useState(0);
   return (
     <section className="visual-gallery phase-screen" aria-label="地球視覺圖鑑">
       <header className="phase-header gallery-header">
@@ -194,41 +203,120 @@ export function VisualGallery({
           </div>
         </section>
 
-        <section className="gallery-section battle-vfx-gallery">
+        <section className="gallery-section battle-vfx-gallery phase77a-attack-lab">
           <header>
             <div>
               <Zap />
               <span>
-                <small>DEPLOYMENT · ATTACK · OVERDRIVE</small>
-                <h2>戰鬥辨識與特效校驗</h2>
+                <small>12 ATTACK LANGUAGES · HIT FEEDBACK · REPLAY</small>
+                <h2>Phase 7.7a 攻擊特效除錯台</h2>
               </span>
             </div>
-            <em>READABILITY PASS</em>
+            <em>PROJECTILE · TRAIL · IMPACT · SOUND HOOK</em>
           </header>
-          <div>
-            <article className="gallery-node-preview">
-              <button className="deploy-slot deployment-node affordable">
-                <i className="node-circuit" />
-                <TowerControl />
-                <small>DEPLOY</small>
+          <nav className="vfx-lab-controls" aria-label="攻擊特效測試控制">
+            <button onClick={() => setReplayKey((value) => value + 1)}>
+              <Zap /> REPLAY ALL
+            </button>
+            {[0.5, 1, 2].map((speed) => (
+              <button
+                key={speed}
+                className={vfxSpeed === speed ? 'active' : ''}
+                onClick={() => setVfxSpeed(speed)}
+              >
+                {speed}× SPEED
               </button>
-              <span>生產部署節點</span>
-            </article>
-            {['single', 'aoe', 'chain'].map((pattern) => (
-              <article key={pattern} className="gallery-vfx-preview">
-                <i className={`projectile pattern-${pattern}`} />
-                <span>{pattern.toUpperCase()} ATTACK</span>
-              </article>
             ))}
-            <article className="gallery-od-preview">
-              <TowerArtwork
-                towerID="EARTH_SOVEREIGN_END_TURRET"
-                stars={5}
-                battleLevel={5}
-                overdrive
-              />
-              <span>SOVEREIGN OVERDRIVE</span>
-            </article>
+            {(['normal', 'crit', 'skill', 'od'] as const).map((mode) => (
+              <button
+                key={mode}
+                className={vfxMode === mode ? 'active' : ''}
+                onClick={() => setVfxMode(mode)}
+              >
+                {mode.toUpperCase()}
+              </button>
+            ))}
+            <button
+              className={showDummy ? 'active' : ''}
+              onClick={() => setShowDummy((value) => !value)}
+            >
+              DUMMY {showDummy ? 'ON' : 'OFF'}
+            </button>
+          </nav>
+          <div
+            key={replayKey}
+            className={`attack-vfx-lab phase77a vfx-mode-${vfxMode}`}
+            style={
+              {
+                '--preview-speed': `${1 / vfxSpeed}s`,
+              } as React.CSSProperties
+            }
+          >
+            {TOWER_IDS.map((towerID) => {
+              const tower = TOWER_CATALOG[towerID],
+                profile = TOWER_ATTACK_PROFILES[towerID],
+                beam = [
+                  'rail-pierce',
+                  'chain-lightning',
+                  'holy-beam',
+                  'emperor-beam',
+                  'sovereign-collapse',
+                ].includes(profile.attackClass);
+              return (
+                <article key={towerID} className="attack-lab-card">
+                  <header>
+                    <TowerArtwork
+                      towerID={towerID}
+                      stars={vfxMode === 'normal' ? 1 : 5}
+                      battleLevel={vfxMode === 'normal' ? 1 : 5}
+                      overdrive={vfxMode === 'od'}
+                    />
+                    <span>
+                      <small>{profile.impact}</small>
+                      <b>{tower.name}</b>
+                      <em>{profile.displayName}</em>
+                    </span>
+                  </header>
+                  <div className="attack-demo-track">
+                    <i
+                      className={`projectile gallery-attack-projectile attack-${profile.attackClass} ${beam ? 'is-beam' : 'is-travelling'}`}
+                      data-sound-hook={profile.soundHook}
+                    >
+                      <span />
+                      <span />
+                      <span />
+                    </i>
+                    {showDummy && <i className="vfx-dummy">D</i>}
+                    {showDummy && (
+                      <i
+                        className={`hit-impact gallery-hit-impact hit-${profile.impact.toLowerCase().replaceAll('_', '-')} ${vfxMode === 'crit' ? 'is-critical' : ''} ${vfxMode === 'skill' || vfxMode === 'od' ? 'is-vulnerable' : ''}`}
+                      >
+                        <span />
+                        <span />
+                      </i>
+                    )}
+                    {showDummy && (
+                      <output
+                        className={`damage-number gallery-damage-number ${vfxMode === 'crit' ? 'is-critical' : ''} ${vfxMode === 'skill' || vfxMode === 'od' ? 'is-vulnerable' : ''}`}
+                      >
+                        {vfxMode === 'crit' && <b>CRIT</b>}
+                        {(vfxMode === 'skill' || vfxMode === 'od') && (
+                          <b>CORE BREAK</b>
+                        )}
+                        <strong>
+                          {vfxMode === 'normal' ? '1,248' : '4,996'}
+                        </strong>
+                      </output>
+                    )}
+                  </div>
+                  <footer>
+                    <span>{profile.projectileShape}</span>
+                    <span>{profile.trail}</span>
+                    <code>{profile.soundHook}</code>
+                  </footer>
+                </article>
+              );
+            })}
           </div>
         </section>
 

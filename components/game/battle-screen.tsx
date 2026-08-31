@@ -47,6 +47,7 @@ import { getMaterialData } from '@/lib/game/materials';
 import { RewardService } from '@/lib/game/reward-service';
 import { getTowerById, STARTER_TOWER_ID } from '@/lib/game/towers';
 import { getBattleBranch, getBattleBranches } from '@/lib/game/battle-economy';
+import { getBattleWaypoints } from '@/lib/game/battle-readability';
 import {
   ENEMY_VISUAL_PROFILES,
   getBattleEnvironmentProfile,
@@ -107,34 +108,6 @@ const SLOT_LAYOUTS: Record<MapTopology, Array<{ x: number; y: number }>> = {
     { x: 87, y: 50 },
   ],
 };
-function pathPoint(progress: number, topology: MapTopology, branch = 0) {
-  const p = Math.max(0, Math.min(1, progress));
-  if (topology === 'WINDING') {
-    if (p <= 0.25) return { x: 5 + (p / 0.25) * 30, y: 70 };
-    if (p <= 0.5) return { x: 35, y: 70 - ((p - 0.25) / 0.25) * 40 };
-    if (p <= 0.75) return { x: 35 + ((p - 0.5) / 0.25) * 35, y: 30 };
-    return {
-      x: 70 + ((p - 0.75) / 0.25) * 23,
-      y: 30 + ((p - 0.75) / 0.25) * 35,
-    };
-  }
-  if (topology === 'MERGE') {
-    if (p < 0.42) return { x: 4 + (p / 0.42) * 38, y: branch ? 72 : 30 };
-    return {
-      x: 42 + ((p - 0.42) / 0.58) * 52,
-      y: 51 + (branch ? 1 : -1) * Math.max(0, 1 - p) * 18,
-    };
-  }
-  if (topology === 'PARALLEL') {
-    if (p < 0.72) return { x: 5 + (p / 0.72) * 65, y: branch ? 68 : 32 };
-    return {
-      x: 70 + ((p - 0.72) / 0.28) * 24,
-      y: (branch ? 68 : 32) + ((p - 0.72) / 0.28) * (branch ? -16 : 20),
-    };
-  }
-  const angle = (branch ? 1 : -1) * (1 - p) * 0.75;
-  return { x: 5 + p * 89, y: 50 + Math.sin(angle * 3.14) * 30 };
-}
 function createBattleSessionID(tierID?: EarthTierId) {
   return `earth-${tierID?.toLowerCase() ?? 'tutorial'}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
@@ -178,6 +151,12 @@ export function BattleScreen({
     runtimeId: number;
     level: 3 | 5;
   } | null>(null);
+  const [movementDebug, setMovementDebug] = useState(false);
+  const [safeAreaDebug, setSafeAreaDebug] = useState(false);
+  const [textBoundsDebug, setTextBoundsDebug] = useState(false);
+  const [resolutionDebug, setResolutionDebug] = useState<
+    'native' | 'low' | 'mobile'
+  >('native');
   const resultCommitted = useRef(false);
   const historyRecorded = useRef(false);
   const sync = useCallback(() => setSnapshot(engineRef.current.snapshot()), []);
@@ -329,7 +308,7 @@ export function BattleScreen({
         : [];
   return (
     <section
-      className={`battle-screen phase-screen tactical-battle topology-${snapshot.mapTopology.toLowerCase()} environment-${environment.family.toLowerCase()} ${activeBoss ? 'boss-atmosphere' : ''} sovereign-phase-${sovereignPhase} ${anyOverdrive ? 'overdrive-active' : ''}`}
+      className={`battle-screen phase-screen tactical-battle phase77a topology-${snapshot.mapTopology.toLowerCase()} environment-${environment.family.toLowerCase()} ${activeBoss ? 'boss-atmosphere' : ''} sovereign-phase-${sovereignPhase} ${anyOverdrive ? 'overdrive-active' : ''} ${snapshot.cameraShakeRemaining > 0 ? 'camera-heavy-event' : ''} ${movementDebug ? 'debug-movement-on' : ''} ${safeAreaDebug ? 'debug-safe-area-on' : ''} ${textBoundsDebug ? 'debug-text-bounds-on' : ''} debug-resolution-${resolutionDebug}`}
       aria-label={`25 波${dungeon.name}`}
     >
       <header className="battle-hud">
@@ -467,11 +446,16 @@ export function BattleScreen({
           </section>
         )}
         {slots.map((point, slot) => {
-          const tower = snapshot.deployed.find((item) => item.slot === slot);
+          const tower = snapshot.deployed.find((item) => item.slot === slot),
+            activeProjectile = tower
+              ? snapshot.projectiles.find(
+                  (projectile) => projectile.sourceTowerId === tower.runtimeId,
+                )
+              : null;
           return (
             <button
               key={slot}
-              className={`deploy-slot ${tower ? 'occupied' : 'deployment-node'} ${!tower && snapshot.battleGold >= selectedBuildCost ? 'affordable' : ''} ${!tower && snapshot.battleGold < selectedBuildCost ? 'unaffordable' : ''} ${tower?.runtimeId === selectedTower ? 'selected' : ''} ${tower?.fortifyLevel ? `fortified fortify-${tower.fortifyLevel}` : ''} ${tower?.overdriveRemaining ? 'tower-overdrive' : ''}`}
+              className={`deploy-slot ${tower ? 'occupied' : 'deployment-node'} ${!tower && snapshot.battleGold >= selectedBuildCost ? 'affordable' : ''} ${!tower && snapshot.battleGold < selectedBuildCost ? 'unaffordable' : ''} ${tower?.runtimeId === selectedTower ? 'selected' : ''} ${tower?.fortifyLevel ? `fortified fortify-${tower.fortifyLevel}` : ''} ${tower?.overdriveRemaining ? 'tower-overdrive' : ''} ${activeProjectile ? `tower-firing attack-${activeProjectile.attackClass}` : ''}`}
               style={{ left: `${point.x}%`, top: `${point.y}%` }}
               onClick={() =>
                 tower ? setSelectedTower(tower.runtimeId) : deploy(slot)
@@ -511,12 +495,7 @@ export function BattleScreen({
           );
         })}
         {snapshot.enemies.map((enemy) => {
-          const point = pathPoint(
-              enemy.progress,
-              snapshot.mapTopology,
-              enemy.runtimeId % 2,
-            ),
-            profile = ENEMY_VISUAL_PROFILES[enemy.enemyId],
+          const profile = ENEMY_VISUAL_PROFILES[enemy.enemyId],
             shieldState =
               enemy.maxShieldHP <= 0
                 ? ''
@@ -528,12 +507,13 @@ export function BattleScreen({
           return (
             <button
               key={enemy.runtimeId}
-              className={`enemy-token ${enemy.boss ? 'boss' : ''} ${enemy.enemyId.toLowerCase()} ${shieldState} role-${profile.role.toLowerCase()} phase-${enemy.phase} ${enemy.statuses.map((s) => `has-${s.toLowerCase()}`).join(' ')}`}
+              className={`enemy-token ${enemy.boss ? 'boss' : ''} ${enemy.enemyId.toLowerCase()} ${shieldState} role-${profile.role.toLowerCase()} phase-${enemy.phase} ${enemy.spawnEffectRemaining > 0 ? 'enemy-emerging' : ''} ${enemy.statuses.map((s) => `has-${s.toLowerCase()}`).join(' ')}`}
               style={
                 {
-                  left: `${point.x}%`,
-                  top: `${point.y}%`,
+                  left: `${enemy.pathX}%`,
+                  top: `${enemy.pathY}%`,
                   '--enemy-scale': enemy.visualScale,
+                  '--enemy-heading': `${enemy.heading}deg`,
                 } as React.CSSProperties
               }
               title={`${enemy.name} ${Math.ceil(enemy.hp)}/${Math.ceil(enemy.maxHP)}`}
@@ -563,15 +543,129 @@ export function BattleScreen({
           );
         })}
         {snapshot.projectiles.map((projectile) => {
-          const point = slots[projectile.fromSlot];
+          const source = slots[projectile.fromSlot],
+            target = snapshot.enemies.find(
+              (enemy) => enemy.runtimeId === projectile.targetId,
+            );
+          if (!source || !target) return null;
+          const elapsed = Math.max(
+              0,
+              projectile.duration - projectile.remaining,
+            ),
+            charging = elapsed < projectile.chargeDuration,
+            travelDuration = Math.max(
+              0.01,
+              projectile.duration - projectile.chargeDuration,
+            ),
+            travelProgress = charging
+              ? 0
+              : Math.max(
+                  0,
+                  Math.min(
+                    1,
+                    (elapsed - projectile.chargeDuration) / travelDuration,
+                  ),
+                ),
+            dx = target.pathX - source.x,
+            dy = target.pathY - source.y,
+            distance = Math.hypot(dx, dy),
+            angle = (Math.atan2(dy, dx) * 180) / Math.PI,
+            beam = [
+              'rail-pierce',
+              'chain-lightning',
+              'holy-beam',
+              'emperor-beam',
+              'sovereign-collapse',
+            ].includes(projectile.attackClass),
+            x = source.x + dx * travelProgress,
+            y = source.y + dy * travelProgress;
           return (
             <i
               key={projectile.runtimeId}
-              className={`projectile vfx-${projectile.towerId.toLowerCase()} pattern-${projectile.attackPattern.toLowerCase()} ${projectile.skillPierce ? 'piercing' : ''}`}
-              style={{ left: `${point.x}%`, top: `${point.y}%` }}
-            />
+              className={`projectile attack-${projectile.attackClass} vfx-${projectile.towerId.toLowerCase()} pattern-${projectile.attackPattern.toLowerCase()} ${projectile.skillPierce ? 'piercing' : ''} ${beam ? 'is-beam' : 'is-travelling'} ${charging ? 'is-charging' : ''} sequence-${projectile.sequenceIndex}`}
+              style={
+                {
+                  left: `${beam ? source.x : x}%`,
+                  top: `${beam ? source.y : y}%`,
+                  width: beam && !charging ? `${distance}%` : undefined,
+                  '--projectile-angle': `${angle}deg`,
+                  '--travel-progress': travelProgress,
+                } as React.CSSProperties
+              }
+              data-sound-hook={projectile.soundHook}
+              aria-hidden="true"
+            >
+              <span />
+              <span />
+              <span />
+            </i>
           );
         })}
+        {snapshot.impacts.map((impact) => (
+          <i
+            key={impact.runtimeId}
+            className={`hit-impact hit-${impact.kind.toLowerCase().replaceAll('_', '-')} impact-${impact.towerId.toLowerCase()} ${impact.critical ? 'is-critical' : ''} ${impact.vulnerable ? 'is-vulnerable' : ''} ${impact.shielded ? 'is-shielded' : ''}`}
+            style={{ left: `${impact.x}%`, top: `${impact.y}%` }}
+            aria-hidden="true"
+          >
+            <span />
+            <span />
+          </i>
+        ))}
+        <div className="battle-world-text" aria-live="polite">
+          {snapshot.damageNumbers.map((number) => (
+            <output
+              key={number.runtimeId}
+              className={`damage-number ${number.critical ? 'is-critical' : ''} ${number.vulnerable ? 'is-vulnerable' : ''} ${number.shielded ? 'is-shielded' : ''} ${number.hitCount > 1 ? 'is-aggregated' : ''}`}
+              style={
+                {
+                  left: `${number.x}%`,
+                  top: `${number.y}%`,
+                  '--damage-offset-x': `${number.offsetX}px`,
+                } as React.CSSProperties
+              }
+            >
+              {number.critical && <b>CRIT</b>}
+              {number.vulnerable && <b>CORE BREAK</b>}
+              <strong>
+                {number.missed
+                  ? 'MISS'
+                  : Math.max(0, Math.round(number.amount)).toLocaleString()}
+              </strong>
+              {number.hitCount > 1 && <small>×{number.hitCount}</small>}
+            </output>
+          ))}
+        </div>
+        {debugMode && movementDebug && (
+          <div className="movement-debug-layer">
+            {[0, 1].flatMap((branch) =>
+              getBattleWaypoints(snapshot.mapTopology, branch).map(
+                (point, index) => (
+                  <i
+                    key={`${branch}-${index}`}
+                    className={`debug-waypoint branch-${branch}`}
+                    style={{ left: `${point.x}%`, top: `${point.y}%` }}
+                  >
+                    {branch}:{index}
+                  </i>
+                ),
+              ),
+            )}
+            {snapshot.enemies.map((enemy) => (
+              <span
+                key={enemy.runtimeId}
+                className="enemy-motion-readout"
+                style={{ left: `${enemy.pathX}%`, top: `${enemy.pathY}%` }}
+              >
+                P {enemy.progress.toFixed(3)} · WP {enemy.targetWaypoint}
+                <br />V {enemy.actualSpeed.toFixed(3)} /{' '}
+                {enemy.speed.toFixed(3)}
+                <br />
+                XY {enemy.pathX.toFixed(1)}, {enemy.pathY.toFixed(1)}
+              </span>
+            ))}
+          </div>
+        )}
         {(snapshot.state === 'BOSS_WARNING' ||
           snapshot.state === 'WAVE_STARTING') && (
           <div
@@ -1040,7 +1134,7 @@ export function BattleScreen({
       {feedback && <output className="battle-feedback">{feedback}</output>}
       {debugMode && (
         <aside className="battle-debug phase7-debug">
-          <p>DEV · PHASE 7.7</p>
+          <p>DEV · PHASE 7.7A READABILITY</p>
           <div>
             {[1, 5, 10, 15, 20, 25].map((wave) => (
               <button
@@ -1124,6 +1218,56 @@ export function BattleScreen({
               }}
             >
               SUPPORT
+            </button>
+            <button
+              onClick={() => {
+                engineRef.current.debugSpawnDummy();
+                sync();
+              }}
+            >
+              VFX DUMMY
+            </button>
+            {[0.5, 1, 2].map((speed) => (
+              <button
+                key={`speed-${speed}`}
+                onClick={() => {
+                  engineRef.current.debugSetEnemySpeedMultiplier(speed);
+                  sync();
+                }}
+              >
+                ENEMY {speed}×
+              </button>
+            ))}
+            <button
+              className={movementDebug ? 'active' : ''}
+              onClick={() => setMovementDebug((value) => !value)}
+            >
+              PATH DATA
+            </button>
+            <button
+              className={safeAreaDebug ? 'active' : ''}
+              onClick={() => setSafeAreaDebug((value) => !value)}
+            >
+              SAFE AREA
+            </button>
+            <button
+              className={textBoundsDebug ? 'active' : ''}
+              onClick={() => setTextBoundsDebug((value) => !value)}
+            >
+              TEXT BOUNDS
+            </button>
+            <button
+              onClick={() =>
+                setResolutionDebug((value) =>
+                  value === 'native'
+                    ? 'low'
+                    : value === 'low'
+                      ? 'mobile'
+                      : 'native',
+                )
+              }
+            >
+              RES {resolutionDebug.toUpperCase()}
             </button>
             <button
               onClick={() => {

@@ -44,6 +44,14 @@ import {
   getBattleBranch,
   getBattleBranches,
 } from './battle-economy';
+import {
+  DAMAGE_AGGREGATION_WINDOW,
+  HitFeedbackKind,
+  MAX_WORLD_FEEDBACK_ITEMS,
+  TOWER_ATTACK_PROFILES,
+  interpolateHeading,
+  sampleBattlePath,
+} from './battle-readability';
 
 type EnemyStatus = BossMechanic | 'SHOCKED';
 export interface EnemyRuntime {
@@ -57,9 +65,16 @@ export interface EnemyRuntime {
   defense: number;
   baseDefense: number;
   speed: number;
+  actualSpeed: number;
   baseSpeed: number;
   baseDamage: number;
   progress: number;
+  pathBranch: number;
+  pathX: number;
+  pathY: number;
+  heading: number;
+  targetWaypoint: number;
+  spawnEffectRemaining: number;
   boss: boolean;
   elite: boolean;
   regenerationPercent: number;
@@ -117,6 +132,43 @@ export interface ProjectileRuntime {
   skillPierce: boolean;
   towerId: TowerId;
   attackVFXID: string;
+  duration: number;
+  chargeDuration: number;
+  attackClass: string;
+  impact: HitFeedbackKind;
+  soundHook: string;
+  cameraShake: number;
+  sequenceIndex: number;
+}
+export interface BattleImpactRuntime {
+  runtimeId: number;
+  targetId: number;
+  towerId: TowerId;
+  kind: HitFeedbackKind;
+  x: number;
+  y: number;
+  critical: boolean;
+  vulnerable: boolean;
+  shielded: boolean;
+  remaining: number;
+  duration: number;
+}
+export interface DamageNumberRuntime {
+  runtimeId: number;
+  targetId: number;
+  towerId: TowerId;
+  x: number;
+  y: number;
+  amount: number;
+  hitCount: number;
+  critical: boolean;
+  vulnerable: boolean;
+  shielded: boolean;
+  missed: boolean;
+  offsetX: number;
+  remaining: number;
+  duration: number;
+  mergeRemaining: number;
 }
 interface SpawnEntry {
   enemyId: EnemyId;
@@ -154,6 +206,8 @@ export interface BattleSnapshot {
   deployed: TowerRuntime[];
   enemies: EnemyRuntime[];
   projectiles: ProjectileRuntime[];
+  impacts: BattleImpactRuntime[];
+  damageNumbers: DamageNumberRuntime[];
   totalKills: number;
   totalDamage: number;
   notice: string;
@@ -176,6 +230,7 @@ export interface BattleSnapshot {
   slotCapacity: number;
   buildCosts: Partial<Record<TowerId, number>>;
   goldEvent: { serial: number; amount: number; reason: string } | null;
+  cameraShakeRemaining: number;
 }
 const SLOT_PROGRESS = [0.14, 0.26, 0.38, 0.5, 0.62, 0.74, 0.86];
 const BLESSING_WAVES = new Set([5, 10, 15, 20]);
@@ -259,6 +314,8 @@ export class BattleEngine {
   private deployed: TowerRuntime[] = [];
   private enemies: EnemyRuntime[] = [];
   private projectiles: ProjectileRuntime[] = [];
+  private impacts: BattleImpactRuntime[] = [];
+  private damageNumbers: DamageNumberRuntime[] = [];
   private spawnQueue: SpawnEntry[] = [];
   private spawnTimer = 0;
   private stateTimer = 0;
@@ -293,6 +350,7 @@ export class BattleEngine {
   private goldEvent: BattleSnapshot['goldEvent'] = null;
   private goldEventSerial = 0;
   private retiredTowers = new Map<number, TowerRuntime>();
+  private cameraShakeRemaining = 0;
   constructor(
     save: PlayerSave,
     dungeon: DungeonConfig = EARTH_TUTORIAL_DUNGEON,
@@ -358,6 +416,8 @@ export class BattleEngine {
         ...p,
         snapshot: { ...p.snapshot },
       })),
+      impacts: this.impacts.map((impact) => ({ ...impact })),
+      damageNumbers: this.damageNumbers.map((number) => ({ ...number })),
       totalKills: this.totalKills,
       totalDamage: this.totalDamage,
       notice: this.notice,
@@ -385,6 +445,7 @@ export class BattleEngine {
         ]),
       ),
       goldEvent: this.goldEvent ? { ...this.goldEvent } : null,
+      cameraShakeRemaining: this.cameraShakeRemaining,
     };
   }
   private decision() {
@@ -659,6 +720,7 @@ export class BattleEngine {
   private updateTemporary(delta: number) {
     this.careerSkillCooldown = Math.max(0, this.careerSkillCooldown - delta);
     this.careerSkillRemaining = Math.max(0, this.careerSkillRemaining - delta);
+    this.cameraShakeRemaining = Math.max(0, this.cameraShakeRemaining - delta);
     for (const tower of this.deployed) {
       tower.cooldown = Math.max(-0.1, tower.cooldown - delta);
       tower.skillCooldown = Math.max(0, tower.skillCooldown - delta);
@@ -675,6 +737,21 @@ export class BattleEngine {
       tower.fortifyLevel =
         tower.stationaryTime >= 40 ? 2 : tower.stationaryTime >= 20 ? 1 : 0;
     }
+    for (const enemy of this.enemies)
+      enemy.spawnEffectRemaining = Math.max(
+        0,
+        enemy.spawnEffectRemaining - delta,
+      );
+    for (const impact of this.impacts)
+      impact.remaining = Math.max(0, impact.remaining - delta);
+    for (const number of this.damageNumbers) {
+      number.remaining = Math.max(0, number.remaining - delta);
+      number.mergeRemaining = Math.max(0, number.mergeRemaining - delta);
+    }
+    this.impacts = this.impacts.filter((impact) => impact.remaining > 0);
+    this.damageNumbers = this.damageNumbers.filter(
+      (number) => number.remaining > 0,
+    );
   }
   activateTowerSkill(runtimeId: number) {
     const tower = this.deployed.find((t) => t.runtimeId === runtimeId),
@@ -935,7 +1012,10 @@ export class BattleEngine {
           ? Math.min(0.55, 0.1 + this.dungeon.tierOrder * 0.035)
           : 0),
       shieldHP = maxHP * shieldPercent,
-      statuses: EnemyStatus[] = [];
+      statuses: EnemyStatus[] = [],
+      runtimeId = this.id++,
+      pathBranch = runtimeId % 2,
+      spawnPoint = sampleBattlePath(0, this.topology(), pathBranch);
     if (data.boss) {
       const tier = this.dungeon.tierID ?? 'NORMAL',
         primary = BOSS_MECHANICS[tier].primary;
@@ -943,7 +1023,7 @@ export class BattleEngine {
       this.bossTelegraph = `${BOSS_MECHANICS[tier].telegraph} · 對策：${BOSS_MECHANICS[tier].counterplay}`;
     }
     this.enemies.push({
-      runtimeId: this.id++,
+      runtimeId,
       enemyId,
       name: data.boss ? this.dungeon.bossName : data.name,
       hp: maxHP,
@@ -953,12 +1033,19 @@ export class BattleEngine {
       defense,
       baseDefense: defense,
       speed,
+      actualSpeed: speed,
       baseSpeed: speed,
       baseDamage: Math.max(
         1,
         Math.round(data.baseDamage * (1 + (this.wave - 1) * 0.025)),
       ),
       progress: 0,
+      pathBranch,
+      pathX: spawnPoint.x,
+      pathY: spawnPoint.y,
+      heading: spawnPoint.heading,
+      targetWaypoint: spawnPoint.targetWaypoint,
+      spawnEffectRemaining: 0.65,
       boss: data.boss,
       elite,
       regenerationPercent:
@@ -1140,7 +1227,22 @@ export class BattleEngine {
           enemy.maxHP,
           enemy.hp + enemy.maxHP * enemy.regenerationPercent * delta,
         );
-      enemy.progress += enemy.speed * delta;
+      const velocityResponse = 1 - Math.exp(-8 * delta);
+      enemy.actualSpeed += (enemy.speed - enemy.actualSpeed) * velocityResponse;
+      enemy.progress += enemy.actualSpeed * delta;
+      const path = sampleBattlePath(
+        enemy.progress,
+        this.topology(),
+        enemy.pathBranch,
+      );
+      enemy.pathX = path.x;
+      enemy.pathY = path.y;
+      enemy.targetWaypoint = path.targetWaypoint;
+      enemy.heading = interpolateHeading(
+        enemy.heading,
+        path.heading,
+        1 - Math.exp(-10 * delta),
+      );
       if (enemy.progress >= 1) {
         enemy.progress = 1;
         enemy.state = 'DYING';
@@ -1191,7 +1293,9 @@ export class BattleEngine {
       const data = getTowerById(tower.towerId)!,
         skill = TOWER_SKILLS[tower.towerId],
         battleMod = this.battleUpgradeModifiers(tower),
-        pierce = tower.empoweredShots > 0;
+        pierce = tower.empoweredShots > 0,
+        attackProfile = TOWER_ATTACK_PROFILES[tower.towerId],
+        duration = attackProfile.travelDuration + attackProfile.chargeDuration;
       if (pierce) tower.empoweredShots--;
       const chainBonus =
         (this.collectModifiers(tower).chainTargets ?? 0) +
@@ -1207,7 +1311,7 @@ export class BattleEngine {
         fromSlot: tower.slot,
         sourceTowerId: tower.runtimeId,
         targetId: target.runtimeId,
-        remaining: 0.12,
+        remaining: duration,
         snapshot: {
           ...makeDamageSnapshot(tower.stats),
           penetration:
@@ -1222,6 +1326,13 @@ export class BattleEngine {
         skillPierce: pierce,
         towerId: tower.towerId,
         attackVFXID: data.attackVFXID,
+        duration,
+        chargeDuration: attackProfile.chargeDuration,
+        attackClass: attackProfile.attackClass,
+        impact: attackProfile.impact,
+        soundHook: attackProfile.soundHook,
+        cameraShake: attackProfile.cameraShake,
+        sequenceIndex: tower.shots % 3,
       };
       this.projectiles.push(projectile);
       if (this.hasBranchEffect(tower, 'DOUBLE_SHOT_5') && tower.shots % 5 === 0)
@@ -1229,6 +1340,8 @@ export class BattleEngine {
           ...projectile,
           runtimeId: this.id++,
           remaining: projectile.remaining + 0.04,
+          duration: projectile.duration + 0.04,
+          sequenceIndex: (projectile.sequenceIndex + 1) % 3,
         });
       if (
         skill.effect === 'CHAIN_STORM' &&
@@ -1306,18 +1419,32 @@ export class BattleEngine {
         multiplier *
         (target.boss ? projectile.bossDamageMultiplier : 1) *
         this.combatMultiplier(tower, target, projectile, result.critical);
-    this.applyDamage(target, tower, damage);
+    const applied = this.applyDamage(target, tower, damage);
+    this.emitHitFeedback(
+      target,
+      tower,
+      projectile.impact,
+      applied.total,
+      result.critical,
+      result.missed,
+      applied.shielded,
+      projectile.cameraShake,
+    );
   }
   private applyDamage(
     target: EnemyRuntime,
     tower: TowerRuntime,
     rawDamage: number,
   ) {
-    let damage = rawDamage;
+    let damage = rawDamage,
+      total = 0,
+      shielded = false;
     if (target.shieldHP > 0) {
       const shieldDamage = Math.min(target.shieldHP, damage);
+      shielded = shieldDamage > 0;
       target.shieldHP -= shieldDamage;
       damage -= shieldDamage;
+      total += shieldDamage;
       this.recordDamage(tower, shieldDamage);
       if (target.shieldHP <= 0 && target.statuses.includes('BARRIER')) {
         target.statuses = target.statuses.filter((s) => s !== 'BARRIER');
@@ -1326,6 +1453,7 @@ export class BattleEngine {
     }
     if (damage > 0) {
       target.hp = Math.max(0, target.hp - damage);
+      total += damage;
       this.recordDamage(tower, damage);
     }
     if (target.hp <= 0 && target.state === 'ALIVE') target.state = 'DYING';
@@ -1334,16 +1462,107 @@ export class BattleEngine {
       0.02 *
       (1 + (this.baseModifiers().overdriveGainPercent ?? 0));
     this.overdriveEnergy = Math.min(100, this.overdriveEnergy + gain);
+    return { total, shielded };
   }
   private directDamage(
     target: EnemyRuntime,
     tower: TowerRuntime,
     damage: number,
   ) {
-    this.applyDamage(
+    const applied = this.applyDamage(
       target,
       tower,
       damage * (target.statuses.includes('VULNERABLE') ? 1.55 : 1),
+    );
+    const profile = TOWER_ATTACK_PROFILES[tower.towerId];
+    this.emitHitFeedback(
+      target,
+      tower,
+      profile.impact,
+      applied.total,
+      false,
+      false,
+      applied.shielded,
+      profile.cameraShake,
+    );
+  }
+  private emitHitFeedback(
+    target: EnemyRuntime,
+    tower: TowerRuntime,
+    kind: HitFeedbackKind,
+    damage: number,
+    critical: boolean,
+    missed: boolean,
+    shielded: boolean,
+    cameraShake: number,
+  ) {
+    const vulnerable = target.statuses.includes('VULNERABLE'),
+      impactDuration =
+        kind === 'EXPLOSION_HIT' || kind === 'HEAVY_HIT' ? 0.46 : 0.34;
+    this.impacts.push({
+      runtimeId: this.id++,
+      targetId: target.runtimeId,
+      towerId: tower.towerId,
+      kind,
+      x: target.pathX,
+      y: target.pathY,
+      critical,
+      vulnerable,
+      shielded,
+      remaining: impactDuration,
+      duration: impactDuration,
+    });
+    if (this.impacts.length > MAX_WORLD_FEEDBACK_ITEMS)
+      this.impacts.splice(0, this.impacts.length - MAX_WORLD_FEEDBACK_ITEMS);
+
+    const canAggregate = !critical && !vulnerable && !missed;
+    const existing = canAggregate
+      ? this.damageNumbers.find(
+          (number) =>
+            number.targetId === target.runtimeId &&
+            number.towerId === tower.towerId &&
+            number.mergeRemaining > 0 &&
+            !number.critical &&
+            !number.vulnerable,
+        )
+      : null;
+    if (existing) {
+      existing.runtimeId = this.id++;
+      existing.amount += damage;
+      existing.hitCount++;
+      existing.x = target.pathX;
+      existing.y = target.pathY;
+      existing.shielded = existing.shielded || shielded;
+      existing.remaining = existing.duration;
+      existing.mergeRemaining = DAMAGE_AGGREGATION_WINDOW;
+    } else {
+      const runtimeId = this.id++;
+      this.damageNumbers.push({
+        runtimeId,
+        targetId: target.runtimeId,
+        towerId: tower.towerId,
+        x: target.pathX,
+        y: target.pathY,
+        amount: damage,
+        hitCount: 1,
+        critical,
+        vulnerable,
+        shielded,
+        missed,
+        offsetX: ((runtimeId * 17) % 31) - 15,
+        remaining: critical || vulnerable ? 1.05 : 0.86,
+        duration: critical || vulnerable ? 1.05 : 0.86,
+        mergeRemaining: canAggregate ? DAMAGE_AGGREGATION_WINDOW : 0,
+      });
+    }
+    if (this.damageNumbers.length > MAX_WORLD_FEEDBACK_ITEMS)
+      this.damageNumbers.splice(
+        0,
+        this.damageNumbers.length - MAX_WORLD_FEEDBACK_ITEMS,
+      );
+    this.cameraShakeRemaining = Math.max(
+      this.cameraShakeRemaining,
+      cameraShake,
     );
   }
   private recordDamage(tower: TowerRuntime, damage: number) {
@@ -1467,6 +1686,8 @@ export class BattleEngine {
   debugJump(wave: number) {
     this.enemies = [];
     this.projectiles = [];
+    this.impacts = [];
+    this.damageNumbers = [];
     this.spawnQueue = [];
     this.blessingOptions = [];
     this.wave = Math.min(25, Math.max(1, Math.floor(wave))) - 1;
@@ -1491,6 +1712,8 @@ export class BattleEngine {
     this.wave = 25;
     this.enemies = [];
     this.projectiles = [];
+    this.impacts = [];
+    this.damageNumbers = [];
     this.spawnQueue = [];
     this.state = 'VICTORY';
     this.notice = 'DEBUG · VICTORY';
@@ -1543,6 +1766,7 @@ export class BattleEngine {
     const boss = this.enemies.find((enemy) => enemy.boss);
     if (boss) {
       boss.speed = 0;
+      boss.actualSpeed = 0;
       boss.baseSpeed = 0;
     }
   }
@@ -1551,5 +1775,32 @@ export class BattleEngine {
     if (!boss) return false;
     boss.hp = boss.maxHP * Math.max(0.01, Math.min(1, percent));
     return true;
+  }
+  debugSpawnDummy() {
+    this.state = 'WAVE_ACTIVE';
+    this.spawnEnemy('EARTH_GRUNT');
+    const dummy = this.enemies[this.enemies.length - 1];
+    if (!dummy) return false;
+    dummy.name = 'VFX 測試傀儡';
+    dummy.maxHP *= 100;
+    dummy.hp = dummy.maxHP;
+    dummy.speed = 0;
+    dummy.actualSpeed = 0;
+    dummy.baseSpeed = 0;
+    dummy.progress = 0.52;
+    const point = sampleBattlePath(
+      dummy.progress,
+      this.topology(),
+      dummy.pathBranch,
+    );
+    dummy.pathX = point.x;
+    dummy.pathY = point.y;
+    dummy.heading = point.heading;
+    dummy.targetWaypoint = point.targetWaypoint;
+    return true;
+  }
+  debugSetEnemySpeedMultiplier(multiplier: number) {
+    const value = Math.max(0, Math.min(4, multiplier));
+    for (const enemy of this.enemies) enemy.speed = enemy.baseSpeed * value;
   }
 }
