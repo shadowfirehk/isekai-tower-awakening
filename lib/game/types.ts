@@ -26,8 +26,21 @@ export type CareerId =
   | 'GALAXY_STARBURST_HUNTER'
   | 'UNIVERSE_CHAOS_LAW_MASTER';
 
-export const EARTH_TIER_IDS = ['NORMAL', 'RARE', 'SCARCE', 'EPIC', 'LEGENDARY', 'MYTHIC', 'SECRET', 'KING', 'EMPEROR', 'VENERABLE', 'SAINT', 'SOVEREIGN'] as const;
-export type EarthTierId = typeof EARTH_TIER_IDS[number];
+export const EARTH_TIER_IDS = [
+  'NORMAL',
+  'RARE',
+  'SCARCE',
+  'EPIC',
+  'LEGENDARY',
+  'MYTHIC',
+  'SECRET',
+  'KING',
+  'EMPEROR',
+  'VENERABLE',
+  'SAINT',
+  'SOVEREIGN',
+] as const;
+export type EarthTierId = (typeof EARTH_TIER_IDS)[number];
 
 export type TowerId =
   | 'EARTH_BASIC_AUTO_TURRET'
@@ -66,7 +79,13 @@ export type EnemyId =
   | 'EARTH_REGENERATOR'
   | 'EARTH_SUPPORT'
   | 'EARTH_BOSS';
-export type TargetingMode = 'FIRST' | 'NEAREST' | 'LAST' | 'FARTHEST' | 'STRONGEST' | 'WEAKEST';
+export type TargetingMode =
+  | 'FIRST'
+  | 'NEAREST'
+  | 'LAST'
+  | 'FARTHEST'
+  | 'STRONGEST'
+  | 'WEAKEST';
 export type BattleState =
   | 'SETUP'
   | 'READY'
@@ -74,6 +93,7 @@ export type BattleState =
   | 'WAVE_ACTIVE'
   | 'WAVE_CLEAR'
   | 'INTERMISSION'
+  | 'BLESSING_CHOICE'
   | 'BOSS_WARNING'
   | 'VICTORY'
   | 'DEFEAT'
@@ -225,7 +245,15 @@ export interface EnemyData {
   baseDamage: number;
   reward: number;
   boss: boolean;
-  archetype: 'GRUNT' | 'RUNNER' | 'TANK' | 'ELITE' | 'SHIELDED' | 'REGENERATING' | 'SUPPORT' | 'BOSS';
+  archetype:
+    | 'GRUNT'
+    | 'RUNNER'
+    | 'TANK'
+    | 'ELITE'
+    | 'SHIELDED'
+    | 'REGENERATING'
+    | 'SUPPORT'
+    | 'BOSS';
   shieldPercent?: number;
   regenerationPercent?: number;
   elite?: boolean;
