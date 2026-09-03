@@ -1,3 +1,4 @@
+import { publicAssetPath } from './asset-path';
 import { EarthTierId, EnemyId, EARTH_TIER_IDS, TowerId } from './types';
 
 export interface TierVisualStyle {
@@ -304,7 +305,9 @@ export interface BattleEnvironmentProfile {
   lightingProfile: string;
 }
 
-const ENVIRONMENT_ATLAS = '/assets/earth-battle-environment-atlas-v1.webp';
+const ENVIRONMENT_ATLAS = publicAssetPath(
+  '/assets/earth-battle-environment-atlas-v1.webp',
+);
 export const BATTLE_ENVIRONMENT_PROFILES: Record<
   BattleEnvironmentFamily,
   BattleEnvironmentProfile

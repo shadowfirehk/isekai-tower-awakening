@@ -6,6 +6,13 @@ const repositoryName =
   process.env.GITHUB_REPOSITORY?.split('/').at(-1) ?? 'isekai-tower-awakening';
 const assetBasePath =
   process.env.GITHUB_PAGES === 'true' ? `/${repositoryName}` : '';
+const assetStyles = {
+  '--asset-bg-earth': `url("${assetBasePath}/BG_Earth_Main.png")`,
+  '--asset-career-wall-guardian': `url("${assetBasePath}/CAREER_WallGuardian.png")`,
+  '--asset-earth-tower-atlas': `url("${assetBasePath}/assets/earth-tower-atlas.png")`,
+  '--asset-earth-enemy-atlas': `url("${assetBasePath}/assets/earth-enemy-boss-atlas.png")`,
+  '--asset-earth-wall-guardian': `url("${assetBasePath}/assets/earth-wall-guardian.png")`,
+} as React.CSSProperties;
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -44,6 +51,7 @@ export default function RootLayout({
     <html lang="zh-Hant">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        style={assetStyles}
       >
         {children}
       </body>

@@ -43,8 +43,16 @@ export default defineConfig(async () => {
 
   // Wrangler snapshots its log path while the Cloudflare plugin is imported.
   const { cloudflare } = await import('@cloudflare/vite-plugin');
+  const repositoryName =
+    process.env.GITHUB_REPOSITORY?.split('/').at(-1) ??
+    'isekai-tower-awakening';
+  const publicAssetBasePath =
+    process.env.GITHUB_PAGES === 'true' ? `/${repositoryName}` : '';
 
   return {
+    define: {
+      __PUBLIC_ASSET_BASE_PATH__: JSON.stringify(publicAssetBasePath),
+    },
     css: { postcss: { plugins: [tailwindcss()] } },
     server: isCodexSeatbeltSandbox
       ? { watch: { useFsEvents: false, usePolling: true } }

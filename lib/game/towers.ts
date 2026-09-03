@@ -6,6 +6,7 @@ import {
   TowerId,
 } from './types';
 import { battleBuildCost } from './battle-economy';
+import { publicAssetPath } from './asset-path';
 
 export const STARTER_TOWER_ID: TowerId = 'EARTH_BASIC_AUTO_TURRET';
 
@@ -249,7 +250,7 @@ export const TOWER_CATALOG = Object.fromEntries(
       maxTargets,
       bossDamageMultiplier,
       battleBuildCost: battleBuildCost(id),
-      artwork: '/assets/earth-tower-atlas.png',
+      artwork: publicAssetPath('/assets/earth-tower-atlas.png'),
       artIndex,
       roleIcon: roleTags[0],
       revealVFXID: `VFX_TOWER_${tierID}_REVEAL`,

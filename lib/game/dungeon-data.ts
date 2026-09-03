@@ -1,3 +1,4 @@
+import { publicAssetPath } from './asset-path';
 import { getEarthTier } from './earth-tiers';
 import { EarthTierId, EnemyData, EnemyId, RealmType } from './types';
 import { ENEMY_VISUAL_PROFILES } from './visual-config';
@@ -22,8 +23,8 @@ function art(
 > {
   const profile = ENEMY_VISUAL_PROFILES[id];
   return {
-    portrait: '/assets/earth-enemy-boss-atlas.png',
-    cardArtwork: '/assets/earth-enemy-boss-atlas.png',
+    portrait: publicAssetPath('/assets/earth-enemy-boss-atlas.png'),
+    cardArtwork: publicAssetPath('/assets/earth-enemy-boss-atlas.png'),
     battlePrefab: profile.id,
     silhouette: profile.silhouette,
     icon: profile.role,

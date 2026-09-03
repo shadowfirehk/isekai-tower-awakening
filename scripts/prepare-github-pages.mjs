@@ -1,12 +1,4 @@
-import {
-  cp,
-  mkdir,
-  readFile,
-  readdir,
-  rm,
-  stat,
-  writeFile,
-} from 'node:fs/promises';
+import { cp, mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const projectRoot = process.cwd();
@@ -20,14 +12,6 @@ if (!repositoryName) {
 }
 
 const basePath = `/${repositoryName}`;
-const textExtensions = new Set([
-  '.css',
-  '.html',
-  '.js',
-  '.json',
-  '.rsc',
-  '.txt',
-]);
 
 async function exists(target) {
   try {
@@ -68,10 +52,6 @@ async function listFiles(directory, prefix = '') {
   return files;
 }
 
-function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 const publicAssetPaths = (await listFiles(publicDir))
   .map((file) => `/${file}`)
   .sort((left, right) => right.length - left.length);
@@ -84,46 +64,21 @@ if (await exists(prefixedClientDir)) {
   await copyDirectoryContents(prefixedClientDir, outputDir);
 }
 
-for (const relativeFile of await listFiles(outputDir)) {
-  if (!textExtensions.has(path.extname(relativeFile))) continue;
-  const filePath = path.join(outputDir, ...relativeFile.split('/'));
-  let content = await readFile(filePath, 'utf8');
-
-  for (const assetPath of publicAssetPaths) {
-    const unprefixedAsset = new RegExp(
-      `(?<!${escapeRegExp(basePath)})${escapeRegExp(assetPath)}`,
-      'g',
-    );
-    content = content.replace(unprefixedAsset, `${basePath}${assetPath}`);
-  }
-
-  await writeFile(filePath, content);
-}
-
 await writeFile(path.join(outputDir, '.nojekyll'), '');
 
 if (!(await exists(path.join(outputDir, 'index.html')))) {
   throw new Error('Prepared Pages artifact is missing index.html.');
 }
 
-const remainingBadReferences = [];
-for (const relativeFile of await listFiles(outputDir)) {
-  if (!textExtensions.has(path.extname(relativeFile))) continue;
-  const filePath = path.join(outputDir, ...relativeFile.split('/'));
-  const content = await readFile(filePath, 'utf8');
-  for (const assetPath of publicAssetPaths) {
-    const unprefixedAsset = new RegExp(
-      `(?<!${escapeRegExp(basePath)})${escapeRegExp(assetPath)}`,
-    );
-    if (unprefixedAsset.test(content)) {
-      remainingBadReferences.push(`${relativeFile}: ${assetPath}`);
-    }
-  }
+const missingAssets = [];
+for (const assetPath of publicAssetPaths) {
+  const outputAsset = path.join(outputDir, ...assetPath.slice(1).split('/'));
+  if (!(await exists(outputAsset))) missingAssets.push(assetPath);
 }
 
-if (remainingBadReferences.length > 0) {
+if (missingAssets.length > 0) {
   throw new Error(
-    `Unprefixed public assets remain:\n${remainingBadReferences.join('\n')}`,
+    `Prepared Pages artifact is missing:\n${missingAssets.join('\n')}`,
   );
 }
 
