@@ -44,19 +44,12 @@ jobs:
           GITHUB_PAGES: 'true'
 
       - name: Prepare Pages artifact
-        shell: bash
-        run: |
-          repository_name="${GITHUB_REPOSITORY#*/}"
-          if [ -d "dist/client/${repository_name}" ]; then
-            cp -R "dist/client/${repository_name}/." dist/client/
-            rm -rf "dist/client/${repository_name}"
-          fi
-          touch dist/client/.nojekyll
+        run: pnpm prepare:pages
 
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: dist/client
+          path: out
 
   deploy:
     environment:

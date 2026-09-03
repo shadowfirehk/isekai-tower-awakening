@@ -10,6 +10,7 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "build:pages": "vinext build --prerender-concurrency 1",
+    "prepare:pages": "node scripts/prepare-github-pages.mjs",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
     "format": "oxfmt"
