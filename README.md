@@ -4,8 +4,10 @@
 
 ## 遊玩
 
-- [目前公開版本](https://isekai-tower-awakening.hyacinthmorrisonmwd.chatgpt.site/)
-- GitHub Pages 會在 `main` 分支更新後自動建置並發布。
+- [GitHub Pages 遊戲版](https://shadowfirehk.github.io/isekai-tower-awakening/)
+- [Sites 備用版本](https://isekai-tower-awakening.hyacinthmorrisonmwd.chatgpt.site/)
+
+GitHub Pages 會在 `main` 分支更新後自動建置並發布。
 
 遊戲進度保存在玩家目前使用的瀏覽器中。
 
