@@ -20,7 +20,7 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { publicAssetPath } from '@/lib/game/asset-path';
-import { playShot } from '@/lib/wwi/audio';
+import { FieldAudio } from '@/lib/wwi/audio';
 import {
   ABSTRACTION,
   BRANCHES,
@@ -42,6 +42,7 @@ import {
 import {
   loadSave,
   newSave,
+  permanentBonus,
   quickResolve,
   settleRun,
   trainUnit,
@@ -116,6 +117,34 @@ export default function WWIApp() {
   const [loaded, setLoaded] = useState(false),
     [storageBlocked, setStorageBlocked] = useState(false),
     [battleKey, setBattleKey] = useState(0);
+  const audio = useRef<FieldAudio | null>(null);
+  useEffect(() => {
+    const player = new FieldAudio();
+    audio.current = player;
+    const unlock = () => {
+      void player.unlock();
+    };
+    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', unlock);
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+      player.dispose();
+      audio.current = null;
+    };
+  }, []);
+  useEffect(() => {
+    const configure = () =>
+      audio.current?.configure(
+        save.settings.sound,
+        screen !== 'BATTLE',
+        !document.hidden,
+      );
+    configure();
+    document.addEventListener('visibilitychange', configure);
+    return () => document.removeEventListener('visibilitychange', configure);
+  }, [save.settings.sound, screen]);
+  const onShot = useCallback((kind: string) => audio.current?.shot(kind), []);
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
@@ -168,11 +197,21 @@ export default function WWIApp() {
     setBattleKey((k) => k + 1);
     navigate('BATTLE');
   };
-  const sound = () =>
-    commit((s) => ({
-      ...s,
-      settings: { ...s.settings, sound: !s.settings.sound },
-    }));
+  const sound = () => {
+    if (
+      !commit((s) => ({
+        ...s,
+        settings: { ...s.settings, sound: !s.settings.sound },
+      }))
+    )
+      return;
+    audio.current?.configure(
+      saveRef.current.settings.sound,
+      screen !== 'BATTLE',
+      !document.hidden,
+    );
+    void audio.current?.unlock();
+  };
   if (screen === 'BATTLE')
     return (
       <Battle
@@ -183,6 +222,7 @@ export default function WWIApp() {
         onLoadout={() => navigate('BRIEFING')}
         onUnits={() => navigate('UNITS')}
         onSound={sound}
+        onShot={onShot}
         sound={save.settings.sound}
       />
     );
@@ -204,7 +244,9 @@ export default function WWIApp() {
             {save.technology}
           </span>
           <button
-            aria-label={save.settings.sound ? '關閉音效' : '開啟音效'}
+            aria-label={save.settings.sound ? '關閉聲音' : '開啟聲音'}
+            title="主選單配樂與戰場音效"
+            aria-pressed={save.settings.sound}
             onClick={sound}
           >
             {save.settings.sound ? (
@@ -504,6 +546,11 @@ export default function WWIApp() {
                       訓練 {save.units[id].level} / 5 · 裝備 Mk.
                       {['', 'I', 'II', 'III'][save.units[id].mark]}
                     </p>
+                    <p>
+                      {id === 'ENGINEER' ? '永久支援半徑' : '永久作戰傷害'} +
+                      {Math.round(permanentBonus(save, id) * 100)}%
+                      <small> · 每次訓練或裝備提升 +5%，最高 +30%</small>
+                    </p>
                     <button
                       disabled={save.units[id].level >= 5}
                       onClick={() => commit((s) => trainUnit(s, id, 'level'))}
@@ -677,6 +724,7 @@ function Battle({
   onLoadout,
   onUnits,
   onSound,
+  onShot,
   sound,
 }: {
   save: WWISave;
@@ -685,6 +733,7 @@ function Battle({
   onLoadout: () => void;
   onUnits: () => void;
   onSound: () => void;
+  onShot: (kind: string) => void;
   sound: boolean;
 }) {
   const [engine, setEngine] = useState(() => new VerdunEngine(save));
@@ -698,13 +747,8 @@ function Battle({
   const [saved, setSaved] = useState(false),
     session = useRef(''),
     settled = useRef(false),
-    audioRef = useRef<AudioContext | null>(null),
-    soundRef = useRef(sound),
     lastEffect = useRef(0),
     modalWasPaused = useRef(false);
-  useEffect(() => {
-    soundRef.current = sound;
-  }, [sound]);
   useEffect(() => {
     session.current = crypto.randomUUID();
     settled.current = false;
@@ -725,23 +769,23 @@ function Battle({
         );
         if (shot) {
           lastEffect.current = shot.id;
-          if (soundRef.current && audioRef.current?.state === 'running') {
-            playShot(audioRef.current, shot.kind);
-          }
+          onShot(shot.kind);
         }
       }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [engine]);
-  useEffect(
-    () => () => {
-      void audioRef.current?.close();
-    },
-    [],
-  );
+  }, [engine, onShot]);
   const terminal = s.state === 'HELD' || s.state === 'LOST';
+  useEffect(() => {
+    if (!terminal || saved) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [terminal, saved]);
   useEffect(() => {
     if (terminal && !settled.current) {
       settled.current = true;
@@ -751,10 +795,6 @@ function Battle({
     }
   }, [terminal, engine, commit]);
   const act = (fn: () => { ok: boolean; error?: string }) => {
-    if (sound && !audioRef.current) {
-      audioRef.current = new AudioContext();
-      void audioRef.current.resume();
-    }
     const result = fn();
     setNotice(result.ok ? '' : (result.error ?? '操作未完成'));
     setSnapshot(engine.snapshot());
@@ -786,6 +826,10 @@ function Battle({
       engine.togglePause();
   };
   const askExit = () => {
+    if (terminal) {
+      if (saved) onExit();
+      return;
+    }
     modalWasPaused.current = engine.snapshot().paused;
     if (!s.paused) engine.togglePause();
     setConfirmExit(true);
@@ -831,7 +875,11 @@ function Battle({
           {s.paused ? <Play /> : <Pause />}
         </button>
         <button onClick={() => engine.toggleSpeed()}>{s.speed}×</button>
-        <button aria-label={sound ? '關閉音效' : '開啟音效'} onClick={onSound}>
+        <button
+          aria-label={sound ? '關閉聲音' : '開啟聲音'}
+          aria-pressed={sound}
+          onClick={onSound}
+        >
           {sound ? <Volume2 /> : <VolumeX />}
         </button>
       </header>
@@ -920,7 +968,7 @@ function Battle({
             {s.formations.map((e) => (
               <div
                 key={e.id}
-                className={`ww-formation ${e.major ? 'major' : ''} ${e.suppressed > 0 ? 'suppressed' : ''}`}
+                className={`ww-formation ${e.major ? 'major' : ''} ${e.suppressed > 0 || e.barrageSlow > 0 ? 'suppressed' : ''}`}
                 style={{ left: `${e.x}%`, top: `${e.y}%` }}
               >
                 <Sprite index={FORMATIONS[e.type].art} />
@@ -1277,13 +1325,31 @@ function Battle({
                 : `進度補給比例：${s.clearedWaves >= 20 ? '70' : s.clearedWaves >= 15 ? '50' : s.clearedWaves >= 10 ? '35' : s.clearedWaves >= 5 ? '20' : '0'}%。完整守住戰區才會解鎖快速結算。`}
             </p>
             <div className="ww-result-actions">
-              <button className="ww-primary" onClick={retry}>
+              <button className="ww-primary" onClick={retry} disabled={!saved}>
                 再次部署
               </button>
-              <button onClick={onLoadout}>調整編制</button>
-              <button onClick={onUnits}>升級兵種</button>
-              <button onClick={onExit}>返回戰役地圖</button>
+              <button onClick={onLoadout} disabled={!saved}>
+                調整編制
+              </button>
+              <button onClick={onUnits} disabled={!saved}>
+                升級兵種
+              </button>
+              <button onClick={onExit} disabled={!saved}>
+                返回戰役地圖
+              </button>
             </div>
+            {!saved && (
+              <button
+                onClick={() => {
+                  if (
+                    window.confirm('本次戰報與獎勵尚未保存。確定放棄並離開？')
+                  )
+                    onExit();
+                }}
+              >
+                放棄未保存戰報並離開
+              </button>
+            )}
             <details>
               <summary>本次編制與戰術命令</summary>
               {engine.record('preview').units.map((u, i) => (

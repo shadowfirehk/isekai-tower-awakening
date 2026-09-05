@@ -1,6 +1,9 @@
 import { UNIT_IDS, type UnitId, type DoctrineId, type FactionId } from './data';
 export const SAVE_KEY = 'wwi-field-command-v8';
 export const SAVE_VERSION = 8;
+export function permanentBonus(save: WWISave, id: UnitId): number {
+  return (save.units[id].level + save.units[id].mark - 2) * 0.05;
+}
 export interface RunRecord {
   id: string;
   at: string;

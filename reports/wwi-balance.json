@@ -1,6 +1,14 @@
 {
-  "date": "2026-09-05T11:59:27.169Z",
+  "date": "2026-09-05T23:23:06.418Z",
   "checks": [
+    "Artillery countdown survives simultaneous major-assault messaging and pause",
+    "TIMING adds exactly 35% in exposed phase only",
+    "BARRAGE slows 20%; MG suppression 25% takes precedence then expires independently",
+    "Engineer radius is exclusive to repair-network branch; early branches rejected without spending",
+    "Simultaneous leaks clamp strength to zero and clear pending pressure",
+    "Permanent engineer training improves actual support adjacency, not nonexistent damage",
+    "Audio opt-in, music/battle transition, mute/resume, hidden tab, single context and cleanup",
+    "Audio unavailable does not throw into gameplay",
     "Independent v8 save, valid 3-type loadout, bounded permanent progression",
     "Chronology, battle roster, field orders and routes",
     "Budget, sell once, occupied/fractional slot and engineer-only start",
@@ -20,10 +28,10 @@
       "seed": 11,
       "doctrine": "DEFENSE",
       "id": "MG-ARTILLERY-ENGINEER-wide-11-DEFENSE",
-      "at": "2026-09-05T11:59:25.821Z",
+      "at": "2026-09-05T23:23:03.300Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 1047.3499999995952,
+      "seconds": 1046.8499999995956,
       "earned": 5801,
       "spent": 2750,
       "units": [
@@ -44,13 +52,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 235,
+      "windows": 234,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "MG",
           "level": 3,
-          "damage": 6122.204799999973,
+          "damage": 6102.27159999998,
           "branches": [
             "MG_B3"
           ]
@@ -58,7 +66,7 @@
         {
           "unit": "ARTILLERY",
           "level": 3,
-          "damage": 56314.2080000001,
+          "damage": 56722.304200000115,
           "branches": [
             "ARTILLERY_B3"
           ]
@@ -74,7 +82,7 @@
         {
           "unit": "MG",
           "level": 3,
-          "damage": 29417.06519999996,
+          "damage": 29244.198199999966,
           "branches": [
             "MG_B3"
           ]
@@ -82,7 +90,7 @@
         {
           "unit": "ARTILLERY",
           "level": 3,
-          "damage": 2400.887,
+          "damage": 2185.591000000001,
           "branches": [
             "ARTILLERY_B3"
           ]
@@ -104,7 +112,7 @@
           ]
         }
       ],
-      "purchaseInterval": 26.544444444448896
+      "purchaseInterval": 26.569444444448873
     },
     {
       "loadout": [
@@ -116,10 +124,10 @@
       "seed": 24,
       "doctrine": "DEFENSE",
       "id": "MG-ARTILLERY-ENGINEER-wide-24-DEFENSE",
-      "at": "2026-09-05T11:59:25.917Z",
+      "at": "2026-09-05T23:23:03.514Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 1001.8999999996365,
+      "seconds": 999.6499999996386,
       "earned": 5801,
       "spent": 2750,
       "units": [
@@ -140,13 +148,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 245,
+      "windows": 255,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "MG",
           "level": 3,
-          "damage": 8818.560000000025,
+          "damage": 8573.681000000039,
           "branches": [
             "MG_A3"
           ]
@@ -154,7 +162,7 @@
         {
           "unit": "ARTILLERY",
           "level": 3,
-          "damage": 50032.30900000022,
+          "damage": 51245.35600000023,
           "branches": [
             "ARTILLERY_A3"
           ]
@@ -170,7 +178,7 @@
         {
           "unit": "ARTILLERY",
           "level": 3,
-          "damage": 35343.433000000055,
+          "damage": 34375.26500000004,
           "branches": [
             "ARTILLERY_A3"
           ]
@@ -200,7 +208,7 @@
           ]
         }
       ],
-      "purchaseInterval": 25.2388888888932
+      "purchaseInterval": 25.227777777782087
     },
     {
       "loadout": [
@@ -212,10 +220,10 @@
       "seed": 11,
       "doctrine": "DEFENSE",
       "id": "MG-ARTILLERY-ENGINEER-tall-11-DEFENSE",
-      "at": "2026-09-05T11:59:25.970Z",
+      "at": "2026-09-05T23:23:03.676Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 1005.0999999996336,
+      "seconds": 1012.8499999996266,
       "earned": 5881,
       "spent": 3720,
       "units": [
@@ -233,13 +241,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 194,
+      "windows": 201,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "MG",
           "level": 5,
-          "damage": 4578.570499999988,
+          "damage": 4987.892499999984,
           "branches": [
             "MG_B3",
             "MG_B5"
@@ -248,7 +256,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 59658.20047499994,
+          "damage": 58509.17654999996,
           "branches": [
             "ARTILLERY_B3",
             "ARTILLERY_B5"
@@ -266,14 +274,14 @@
         {
           "unit": "MG",
           "level": 5,
-          "damage": 30017.59402499977,
+          "damage": 30757.295949999727,
           "branches": [
             "MG_B3",
             "MG_B5"
           ]
         }
       ],
-      "purchaseInterval": 36.41176470587951
+      "purchaseInterval": 36.714705882349826
     },
     {
       "loadout": [
@@ -285,10 +293,10 @@
       "seed": 24,
       "doctrine": "DEFENSE",
       "id": "MG-ARTILLERY-ENGINEER-tall-24-DEFENSE",
-      "at": "2026-09-05T11:59:26.030Z",
+      "at": "2026-09-05T23:23:03.810Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 963.7999999996712,
+      "seconds": 960.2999999996744,
       "earned": 5801,
       "spent": 3780,
       "units": [
@@ -306,13 +314,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 214,
+      "windows": 211,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "MG",
           "level": 5,
-          "damage": 6228.330199999957,
+          "damage": 6175.613199999958,
           "branches": [
             "MG_A3",
             "MG_A5"
@@ -321,7 +329,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 48384.17099999985,
+          "damage": 50726.07339999982,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
@@ -339,14 +347,14 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 39641.8637999999,
+          "damage": 37352.67839999991,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
           ]
         }
       ],
-      "purchaseInterval": 35.52058823529201
+      "purchaseInterval": 35.56176470588021
     },
     {
       "loadout": [
@@ -358,10 +366,10 @@
       "seed": 11,
       "doctrine": "DEFENSE",
       "id": "MG-ARTILLERY-ENGINEER-hybrid-11-DEFENSE",
-      "at": "2026-09-05T11:59:26.101Z",
+      "at": "2026-09-05T23:23:03.950Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 1014.2999999996252,
+      "seconds": 1021.0499999996191,
       "earned": 5857,
       "spent": 4700,
       "units": [
@@ -380,13 +388,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 194,
+      "windows": 201,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "MG",
           "level": 5,
-          "damage": 5013.94399999998,
+          "damage": 5208.143499999978,
           "branches": [
             "MG_B3",
             "MG_B5"
@@ -395,7 +403,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 58982.81587499991,
+          "damage": 58658.69654999992,
           "branches": [
             "ARTILLERY_B3",
             "ARTILLERY_B5"
@@ -413,7 +421,7 @@
         {
           "unit": "MG",
           "level": 5,
-          "damage": 29525.609874999725,
+          "damage": 29655.529699999683,
           "branches": [
             "MG_B3",
             "MG_B5"
@@ -429,7 +437,7 @@
           ]
         }
       ],
-      "purchaseInterval": 35.12272727271872
+      "purchaseInterval": 35.25681818180951
     },
     {
       "loadout": [
@@ -441,10 +449,10 @@
       "seed": 24,
       "doctrine": "DEFENSE",
       "id": "MG-ARTILLERY-ENGINEER-hybrid-24-DEFENSE",
-      "at": "2026-09-05T11:59:26.143Z",
+      "at": "2026-09-05T23:23:04.034Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 972.6499999996631,
+      "seconds": 966.0999999996691,
       "earned": 5801,
       "spent": 4700,
       "units": [
@@ -463,13 +471,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 209,
+      "windows": 192,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "MG",
           "level": 5,
-          "damage": 6755.704999999942,
+          "damage": 6064.493799999953,
           "branches": [
             "MG_A3",
             "MG_A5"
@@ -478,7 +486,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 48150.5809999999,
+          "damage": 48384.99739999989,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
@@ -496,7 +504,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 39348.078999999896,
+          "damage": 39804.873799999914,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
@@ -512,7 +520,7 @@
           ]
         }
       ],
-      "purchaseInterval": 33.78409090908352
+      "purchaseInterval": 33.2863636363567
     },
     {
       "loadout": [
@@ -524,10 +532,10 @@
       "seed": 11,
       "doctrine": "DEFENSE",
       "id": "RIFLE-ARTILLERY-ENGINEER-wide-11-DEFENSE",
-      "at": "2026-09-05T11:59:26.207Z",
+      "at": "2026-09-05T23:23:04.173Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 1062.7499999995812,
+      "seconds": 1061.0499999995827,
       "earned": 5801,
       "spent": 2690,
       "units": [
@@ -548,13 +556,13 @@
       "commands": 6,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 260,
+      "windows": 246,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "RIFLE",
           "level": 3,
-          "damage": 6963.733,
+          "damage": 6989.691,
           "branches": [
             "RIFLE_B3"
           ]
@@ -562,7 +570,7 @@
         {
           "unit": "ARTILLERY",
           "level": 3,
-          "damage": 58143.69880000009,
+          "damage": 58317.36420000007,
           "branches": [
             "ARTILLERY_B3"
           ]
@@ -578,7 +586,7 @@
         {
           "unit": "RIFLE",
           "level": 3,
-          "damage": 23841.241199999997,
+          "damage": 23486.18979999998,
           "branches": [
             "RIFLE_B3"
           ]
@@ -586,7 +594,7 @@
         {
           "unit": "ARTILLERY",
           "level": 3,
-          "damage": 5305.692000000002,
+          "damage": 5461.120000000002,
           "branches": [
             "ARTILLERY_B3"
           ]
@@ -608,7 +616,7 @@
           ]
         }
       ],
-      "purchaseInterval": 26.22500000000447
+      "purchaseInterval": 26.113888888893335
     },
     {
       "loadout": [
@@ -620,10 +628,10 @@
       "seed": 24,
       "doctrine": "DEFENSE",
       "id": "RIFLE-ARTILLERY-ENGINEER-wide-24-DEFENSE",
-      "at": "2026-09-05T11:59:26.255Z",
+      "at": "2026-09-05T23:23:04.274Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 983.5999999996532,
+      "seconds": 990.6499999996468,
       "earned": 5801,
       "spent": 2690,
       "units": [
@@ -644,13 +652,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 262,
+      "windows": 254,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "RIFLE",
           "level": 3,
-          "damage": 11304.742499999997,
+          "damage": 11230.974499999997,
           "branches": [
             "RIFLE_A3"
           ]
@@ -658,7 +666,7 @@
         {
           "unit": "ARTILLERY",
           "level": 3,
-          "damage": 49645.4760000002,
+          "damage": 49840.20400000019,
           "branches": [
             "ARTILLERY_A3"
           ]
@@ -674,7 +682,7 @@
         {
           "unit": "ARTILLERY",
           "level": 3,
-          "damage": 33304.146500000024,
+          "damage": 33183.186500000054,
           "branches": [
             "ARTILLERY_A3"
           ]
@@ -704,7 +712,7 @@
           ]
         }
       ],
-      "purchaseInterval": 24.511111111115206
+      "purchaseInterval": 24.75000000000415
     },
     {
       "loadout": [
@@ -716,10 +724,10 @@
       "seed": 11,
       "doctrine": "DEFENSE",
       "id": "RIFLE-ARTILLERY-ENGINEER-tall-11-DEFENSE",
-      "at": "2026-09-05T11:59:26.295Z",
+      "at": "2026-09-05T23:23:04.362Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 1000.3999999996379,
+      "seconds": 1002.499999999636,
       "earned": 5881,
       "spent": 3680,
       "units": [
@@ -737,13 +745,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 191,
+      "windows": 202,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "RIFLE",
           "level": 5,
-          "damage": 9481.819999999998,
+          "damage": 9669.078750000002,
           "branches": [
             "RIFLE_B3",
             "RIFLE_B5"
@@ -752,7 +760,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 58057.82149999993,
+          "damage": 57541.324249999954,
           "branches": [
             "ARTILLERY_B3",
             "ARTILLERY_B5"
@@ -770,14 +778,14 @@
         {
           "unit": "RIFLE",
           "level": 5,
-          "damage": 26714.72349999999,
+          "damage": 27043.961999999992,
           "branches": [
             "RIFLE_B3",
             "RIFLE_B5"
           ]
         }
       ],
-      "purchaseInterval": 35.8705882352919
+      "purchaseInterval": 36.08823529411523
     },
     {
       "loadout": [
@@ -789,10 +797,10 @@
       "seed": 24,
       "doctrine": "DEFENSE",
       "id": "RIFLE-ARTILLERY-ENGINEER-tall-24-DEFENSE",
-      "at": "2026-09-05T11:59:26.329Z",
+      "at": "2026-09-05T23:23:04.422Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 942.2999999996907,
+      "seconds": 950.8999999996829,
       "earned": 5801,
       "spent": 3760,
       "units": [
@@ -810,13 +818,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 179,
+      "windows": 178,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "RIFLE",
           "level": 5,
-          "damage": 8995.009000000002,
+          "damage": 9154.964750000001,
           "branches": [
             "RIFLE_A3",
             "RIFLE_A5"
@@ -825,7 +833,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 47859.89454999986,
+          "damage": 48188.88659999987,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
@@ -843,14 +851,14 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 37399.46144999992,
+          "damage": 36910.51364999993,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
           ]
         }
       ],
-      "purchaseInterval": 34.88235294117511
+      "purchaseInterval": 35.01764705882204
     },
     {
       "loadout": [
@@ -862,10 +870,10 @@
       "seed": 11,
       "doctrine": "DEFENSE",
       "id": "RIFLE-ARTILLERY-ENGINEER-hybrid-11-DEFENSE",
-      "at": "2026-09-05T11:59:26.376Z",
+      "at": "2026-09-05T23:23:04.511Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 1015.7499999996239,
+      "seconds": 1011.7499999996276,
       "earned": 5857,
       "spent": 4660,
       "units": [
@@ -884,13 +892,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 218,
+      "windows": 219,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "RIFLE",
           "level": 5,
-          "damage": 8993.949999999997,
+          "damage": 9163.85555,
           "branches": [
             "RIFLE_B3",
             "RIFLE_B5"
@@ -899,7 +907,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 57823.81929999992,
+          "damage": 57860.68344999993,
           "branches": [
             "ARTILLERY_B3",
             "ARTILLERY_B5"
@@ -917,7 +925,7 @@
         {
           "unit": "RIFLE",
           "level": 5,
-          "damage": 25976.73869999999,
+          "damage": 25765.620999999992,
           "branches": [
             "RIFLE_B3",
             "RIFLE_B5"
@@ -926,14 +934,14 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 1459.8570000000002,
+          "damage": 1464.2050000000002,
           "branches": [
             "ARTILLERY_B3",
             "ARTILLERY_B5"
           ]
         }
       ],
-      "purchaseInterval": 35.120454545446094
+      "purchaseInterval": 34.98409090908258
     },
     {
       "loadout": [
@@ -945,10 +953,10 @@
       "seed": 24,
       "doctrine": "DEFENSE",
       "id": "RIFLE-ARTILLERY-ENGINEER-hybrid-24-DEFENSE",
-      "at": "2026-09-05T11:59:26.413Z",
+      "at": "2026-09-05T23:23:04.596Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 952.7999999996812,
+      "seconds": 948.1999999996854,
       "earned": 5801,
       "spent": 4660,
       "units": [
@@ -973,7 +981,7 @@
         {
           "unit": "RIFLE",
           "level": 5,
-          "damage": 9773.326174999998,
+          "damage": 10108.002874999998,
           "branches": [
             "RIFLE_A3",
             "RIFLE_A5"
@@ -982,7 +990,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 50247.780299999846,
+          "damage": 49090.372249999884,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
@@ -1000,7 +1008,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 34233.25852499995,
+          "damage": 35055.989874999934,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
@@ -1016,7 +1024,7 @@
           ]
         }
       ],
-      "purchaseInterval": 32.69999999999372
+      "purchaseInterval": 32.731818181811875
     },
     {
       "loadout": [
@@ -1028,10 +1036,10 @@
       "seed": 11,
       "doctrine": "DEFENSE",
       "id": "RIFLE-MG-ENGINEER-wide-11-DEFENSE",
-      "at": "2026-09-05T11:59:26.490Z",
+      "at": "2026-09-05T23:23:04.765Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 1199.8999999994564,
+      "seconds": 1195.3999999994605,
       "earned": 5801,
       "spent": 2530,
       "units": [
@@ -1052,13 +1060,13 @@
       "commands": 6,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 321,
+      "windows": 317,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "MG",
           "level": 3,
-          "damage": 24228.153200000146,
+          "damage": 24336.76840000012,
           "branches": [
             "MG_B3"
           ]
@@ -1066,7 +1074,7 @@
         {
           "unit": "MG",
           "level": 3,
-          "damage": 39641.5288000002,
+          "damage": 39618.68390000018,
           "branches": [
             "MG_B3"
           ]
@@ -1082,7 +1090,7 @@
         {
           "unit": "RIFLE",
           "level": 3,
-          "damage": 30301.042999999998,
+          "damage": 30215.2727,
           "branches": [
             "RIFLE_B3"
           ]
@@ -1112,7 +1120,7 @@
           ]
         }
       ],
-      "purchaseInterval": 27.936111111115217
+      "purchaseInterval": 27.81111111111533
     },
     {
       "loadout": [
@@ -1124,10 +1132,10 @@
       "seed": 24,
       "doctrine": "DEFENSE",
       "id": "RIFLE-MG-ENGINEER-wide-24-DEFENSE",
-      "at": "2026-09-05T11:59:26.556Z",
+      "at": "2026-09-05T23:23:04.911Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 1141.5499999995095,
+      "seconds": 1146.0999999995054,
       "earned": 5801,
       "spent": 2530,
       "units": [
@@ -1154,7 +1162,7 @@
         {
           "unit": "MG",
           "level": 3,
-          "damage": 16478.269999999837,
+          "damage": 16349.149999999836,
           "branches": [
             "MG_A3"
           ]
@@ -1162,7 +1170,7 @@
         {
           "unit": "MG",
           "level": 3,
-          "damage": 39522.70500000123,
+          "damage": 39584.51000000124,
           "branches": [
             "MG_A3"
           ]
@@ -1178,7 +1186,7 @@
         {
           "unit": "MG",
           "level": 3,
-          "damage": 38052.93000000122,
+          "damage": 38028.11500000123,
           "branches": [
             "MG_A3"
           ]
@@ -1186,7 +1194,7 @@
         {
           "unit": "RIFLE",
           "level": 3,
-          "damage": 200.4599999999988,
+          "damage": 292.58999999999867,
           "branches": [
             "RIFLE_A3"
           ]
@@ -1208,7 +1216,7 @@
           ]
         }
       ],
-      "purchaseInterval": 25.952777777781996
+      "purchaseInterval": 26.13611111111537
     },
     {
       "loadout": [
@@ -1220,10 +1228,10 @@
       "seed": 11,
       "doctrine": "DEFENSE",
       "id": "RIFLE-MG-ENGINEER-tall-11-DEFENSE",
-      "at": "2026-09-05T11:59:26.599Z",
+      "at": "2026-09-05T23:23:04.994Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 1039.5499999996023,
+      "seconds": 1037.749999999604,
       "earned": 5881,
       "spent": 3640,
       "units": [
@@ -1247,7 +1255,7 @@
         {
           "unit": "MG",
           "level": 5,
-          "damage": 16209.469649999925,
+          "damage": 16219.958749999947,
           "branches": [
             "MG_B3",
             "MG_B5"
@@ -1274,14 +1282,14 @@
         {
           "unit": "RIFLE",
           "level": 5,
-          "damage": 33928.39635000001,
+          "damage": 33917.907250000004,
           "branches": [
             "RIFLE_B3",
             "RIFLE_B5"
           ]
         }
       ],
-      "purchaseInterval": 37.95882352940849
+      "purchaseInterval": 37.97058823529083
     },
     {
       "loadout": [
@@ -1293,10 +1301,10 @@
       "seed": 24,
       "doctrine": "DEFENSE",
       "id": "RIFLE-MG-ENGINEER-tall-24-DEFENSE",
-      "at": "2026-09-05T11:59:26.643Z",
+      "at": "2026-09-05T23:23:05.075Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 1046.349999999596,
+      "seconds": 1049.3999999995933,
       "earned": 5801,
       "spent": 3660,
       "units": [
@@ -1320,7 +1328,7 @@
         {
           "unit": "MG",
           "level": 5,
-          "damage": 11671.355000000009,
+          "damage": 11686.00500000001,
           "branches": [
             "MG_A3",
             "MG_A5"
@@ -1347,14 +1355,14 @@
         {
           "unit": "MG",
           "level": 5,
-          "damage": 39518.36999999997,
+          "damage": 39503.719999999965,
           "branches": [
             "MG_A3",
             "MG_A5"
           ]
         }
       ],
-      "purchaseInterval": 36.72647058823314
+      "purchaseInterval": 36.90588235293886
     },
     {
       "loadout": [
@@ -1366,10 +1374,10 @@
       "seed": 11,
       "doctrine": "DEFENSE",
       "id": "RIFLE-MG-ENGINEER-hybrid-11-DEFENSE",
-      "at": "2026-09-05T11:59:26.693Z",
+      "at": "2026-09-05T23:23:05.183Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 1086.9499999995592,
+      "seconds": 1084.5499999995614,
       "earned": 5865,
       "spent": 4560,
       "units": [
@@ -1394,7 +1402,7 @@
         {
           "unit": "MG",
           "level": 5,
-          "damage": 17598.358749999934,
+          "damage": 17597.037749999912,
           "branches": [
             "MG_B3",
             "MG_B5"
@@ -1403,7 +1411,7 @@
         {
           "unit": "MG",
           "level": 5,
-          "damage": 43136.73399999998,
+          "damage": 43148.87999999998,
           "branches": [
             "MG_B3",
             "MG_B5"
@@ -1421,7 +1429,7 @@
         {
           "unit": "RIFLE",
           "level": 5,
-          "damage": 33519.27225,
+          "damage": 33508.44725,
           "branches": [
             "RIFLE_B3",
             "RIFLE_B5"
@@ -1437,7 +1445,7 @@
           ]
         }
       ],
-      "purchaseInterval": 38.0909090908986
+      "purchaseInterval": 38.02727272726229
     },
     {
       "loadout": [
@@ -1449,10 +1457,10 @@
       "seed": 24,
       "doctrine": "DEFENSE",
       "id": "RIFLE-MG-ENGINEER-hybrid-24-DEFENSE",
-      "at": "2026-09-05T11:59:26.744Z",
+      "at": "2026-09-05T23:23:05.290Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 1070.1999999995744,
+      "seconds": 1073.6499999995713,
       "earned": 5801,
       "spent": 4560,
       "units": [
@@ -1477,7 +1485,7 @@
         {
           "unit": "MG",
           "level": 5,
-          "damage": 12444.135000000028,
+          "damage": 12436.445000000027,
           "branches": [
             "MG_A3",
             "MG_A5"
@@ -1486,7 +1494,7 @@
         {
           "unit": "MG",
           "level": 5,
-          "damage": 42420.18000000067,
+          "damage": 42424.08000000067,
           "branches": [
             "MG_A3",
             "MG_A5"
@@ -1504,7 +1512,7 @@
         {
           "unit": "MG",
           "level": 5,
-          "damage": 39390.05000000054,
+          "damage": 39393.84000000054,
           "branches": [
             "MG_A3",
             "MG_A5"
@@ -1520,7 +1528,7 @@
           ]
         }
       ],
-      "purchaseInterval": 36.129545454536746
+      "purchaseInterval": 36.286363636354785
     },
     {
       "loadout": [
@@ -1532,10 +1540,10 @@
       "seed": 11,
       "doctrine": "DEFENSE",
       "id": "RIFLE-MG-ARTILLERY-wide-11-DEFENSE",
-      "at": "2026-09-05T11:59:26.791Z",
+      "at": "2026-09-05T23:23:05.401Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 965.04999999967,
+      "seconds": 968.8999999996665,
       "earned": 5801,
       "spent": 2750,
       "units": [
@@ -1556,13 +1564,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 216,
+      "windows": 206,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "MG",
           "level": 3,
-          "damage": 3340.4389999999976,
+          "damage": 3090.3223499999976,
           "branches": [
             "MG_B3"
           ]
@@ -1570,7 +1578,7 @@
         {
           "unit": "ARTILLERY",
           "level": 3,
-          "damage": 46858.84599999998,
+          "damage": 46525.74269999998,
           "branches": [
             "ARTILLERY_B3"
           ]
@@ -1578,7 +1586,7 @@
         {
           "unit": "MG",
           "level": 3,
-          "damage": 27468.79700000001,
+          "damage": 27036.237950000013,
           "branches": [
             "MG_B3"
           ]
@@ -1586,7 +1594,7 @@
         {
           "unit": "ARTILLERY",
           "level": 3,
-          "damage": 16586.282999999985,
+          "damage": 17602.061999999984,
           "branches": [
             "ARTILLERY_B3"
           ]
@@ -1616,7 +1624,7 @@
           ]
         }
       ],
-      "purchaseInterval": 24.591666666670807
+      "purchaseInterval": 24.613888888893037
     },
     {
       "loadout": [
@@ -1628,10 +1636,10 @@
       "seed": 24,
       "doctrine": "DEFENSE",
       "id": "RIFLE-MG-ARTILLERY-wide-24-DEFENSE",
-      "at": "2026-09-05T11:59:26.837Z",
+      "at": "2026-09-05T23:23:05.524Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 979.1999999996572,
+      "seconds": 989.4499999996478,
       "earned": 5801,
       "spent": 2730,
       "units": [
@@ -1652,13 +1660,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 222,
+      "windows": 238,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "MG",
           "level": 3,
-          "damage": 8180.09500000003,
+          "damage": 8113.352000000026,
           "branches": [
             "MG_A3"
           ]
@@ -1666,7 +1674,7 @@
         {
           "unit": "ARTILLERY",
           "level": 3,
-          "damage": 48396.208000000195,
+          "damage": 45955.319000000156,
           "branches": [
             "ARTILLERY_A3"
           ]
@@ -1674,7 +1682,7 @@
         {
           "unit": "ARTILLERY",
           "level": 3,
-          "damage": 35306.34800000008,
+          "damage": 37728.59500000011,
           "branches": [
             "ARTILLERY_A3"
           ]
@@ -1682,7 +1690,7 @@
         {
           "unit": "RIFLE",
           "level": 3,
-          "damage": 2371.714,
+          "damage": 2457.099,
           "branches": [
             "RIFLE_A3"
           ]
@@ -1724,10 +1732,10 @@
       "seed": 11,
       "doctrine": "DEFENSE",
       "id": "RIFLE-MG-ARTILLERY-tall-11-DEFENSE",
-      "at": "2026-09-05T11:59:26.873Z",
+      "at": "2026-09-05T23:23:05.626Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 948.3999999996852,
+      "seconds": 954.1999999996799,
       "earned": 5801,
       "spent": 3800,
       "units": [
@@ -1745,13 +1753,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 171,
+      "windows": 165,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "MG",
           "level": 5,
-          "damage": 2078.7325000000005,
+          "damage": 2231.4725000000017,
           "branches": [
             "MG_B3",
             "MG_B5"
@@ -1760,7 +1768,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 50438.70244999998,
+          "damage": 50926.45468749998,
           "branches": [
             "ARTILLERY_B3",
             "ARTILLERY_B5"
@@ -1769,7 +1777,7 @@
         {
           "unit": "MG",
           "level": 5,
-          "damage": 29239.10714999977,
+          "damage": 29022.442412499757,
           "branches": [
             "MG_B3",
             "MG_B5"
@@ -1778,14 +1786,14 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 12497.822900000003,
+          "damage": 12073.9954,
           "branches": [
             "ARTILLERY_B3",
             "ARTILLERY_B5"
           ]
         }
       ],
-      "purchaseInterval": 34.952941176469075
+      "purchaseInterval": 35.211764705880604
     },
     {
       "loadout": [
@@ -1797,10 +1805,10 @@
       "seed": 24,
       "doctrine": "DEFENSE",
       "id": "RIFLE-MG-ARTILLERY-tall-24-DEFENSE",
-      "at": "2026-09-05T11:59:26.909Z",
+      "at": "2026-09-05T23:23:05.718Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 954.7999999996794,
+      "seconds": 958.2999999996762,
       "earned": 5801,
       "spent": 3780,
       "units": [
@@ -1818,13 +1826,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 181,
+      "windows": 166,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "MG",
           "level": 5,
-          "damage": 5743.3593999999675,
+          "damage": 7228.865599999948,
           "branches": [
             "MG_A3",
             "MG_A5"
@@ -1833,7 +1841,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 50129.8879999998,
+          "damage": 40788.395049999905,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
@@ -1842,7 +1850,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 37229.606799999936,
+          "damage": 44769.61374999986,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
@@ -1851,14 +1859,14 @@
         {
           "unit": "RIFLE",
           "level": 5,
-          "damage": 1151.5108,
+          "damage": 1467.4906000000003,
           "branches": [
             "RIFLE_A3",
             "RIFLE_A5"
           ]
         }
       ],
-      "purchaseInterval": 34.94411764705724
+      "purchaseInterval": 35.20882352940994
     },
     {
       "loadout": [
@@ -1870,10 +1878,10 @@
       "seed": 11,
       "doctrine": "DEFENSE",
       "id": "RIFLE-MG-ARTILLERY-hybrid-11-DEFENSE",
-      "at": "2026-09-05T11:59:26.948Z",
+      "at": "2026-09-05T23:23:05.839Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 948.3499999996852,
+      "seconds": 949.2499999996844,
       "earned": 5801,
       "spent": 4700,
       "units": [
@@ -1892,13 +1900,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 170,
+      "windows": 164,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "MG",
           "level": 5,
-          "damage": 1957.2415000000003,
+          "damage": 2111.5115000000005,
           "branches": [
             "MG_B3",
             "MG_B5"
@@ -1907,7 +1915,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 51027.86544999997,
+          "damage": 51524.24068749999,
           "branches": [
             "ARTILLERY_B3",
             "ARTILLERY_B5"
@@ -1916,7 +1924,7 @@
         {
           "unit": "MG",
           "level": 5,
-          "damage": 28634.540149999724,
+          "damage": 28554.58041249971,
           "branches": [
             "MG_B3",
             "MG_B5"
@@ -1925,7 +1933,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 12634.717899999996,
+          "damage": 12064.032399999996,
           "branches": [
             "ARTILLERY_B3",
             "ARTILLERY_B5"
@@ -1941,7 +1949,7 @@
           ]
         }
       ],
-      "purchaseInterval": 32.83863636362989
+      "purchaseInterval": 32.811363636357186
     },
     {
       "loadout": [
@@ -1953,10 +1961,10 @@
       "seed": 24,
       "doctrine": "DEFENSE",
       "id": "RIFLE-MG-ARTILLERY-hybrid-24-DEFENSE",
-      "at": "2026-09-05T11:59:26.988Z",
+      "at": "2026-09-05T23:23:05.958Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 958.2499999996762,
+      "seconds": 956.5999999996777,
       "earned": 5801,
       "spent": 4700,
       "units": [
@@ -1975,13 +1983,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 174,
+      "windows": 168,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "MG",
           "level": 5,
-          "damage": 6710.0973999999405,
+          "damage": 6763.640599999944,
           "branches": [
             "MG_A3",
             "MG_A5"
@@ -1990,7 +1998,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 50411.74389999988,
+          "damage": 43876.62199999992,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
@@ -1999,7 +2007,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 35752.24639999997,
+          "damage": 41780.87454999989,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
@@ -2008,7 +2016,7 @@
         {
           "unit": "RIFLE",
           "level": 5,
-          "damage": 1380.2773000000002,
+          "damage": 1833.2278500000004,
           "branches": [
             "RIFLE_A3",
             "RIFLE_A5"
@@ -2024,7 +2032,7 @@
           ]
         }
       ],
-      "purchaseInterval": 32.84772727272073
+      "purchaseInterval": 32.922727272720664
     },
     {
       "loadout": [
@@ -2036,10 +2044,10 @@
       "seed": 18,
       "doctrine": "ARTILLERY",
       "id": "MG-ARTILLERY-ENGINEER-hybrid-18-ARTILLERY",
-      "at": "2026-09-05T11:59:27.059Z",
+      "at": "2026-09-05T23:23:06.141Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 952.7499999996812,
+      "seconds": 956.7499999996776,
       "earned": 5801,
       "spent": 4700,
       "units": [
@@ -2058,13 +2066,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 197,
+      "windows": 193,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "MG",
           "level": 5,
-          "damage": 6189.558399999946,
+          "damage": 6671.062999999934,
           "branches": [
             "MG_A3",
             "MG_A5"
@@ -2073,7 +2081,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 48723.52699999995,
+          "damage": 46501.54699999992,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
@@ -2091,7 +2099,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 38341.27959999994,
+          "damage": 40081.754999999954,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
@@ -2107,7 +2115,7 @@
           ]
         }
       ],
-      "purchaseInterval": 32.824999999993544
+      "purchaseInterval": 32.87045454544805
     },
     {
       "loadout": [
@@ -2119,10 +2127,10 @@
       "seed": 18,
       "doctrine": "LOGISTICS",
       "id": "MG-ARTILLERY-ENGINEER-hybrid-18-LOGISTICS",
-      "at": "2026-09-05T11:59:27.102Z",
+      "at": "2026-09-05T23:23:06.247Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 936.6499999996959,
+      "seconds": 948.2999999996853,
       "earned": 6851,
       "spent": 4326,
       "units": [
@@ -2141,13 +2149,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 177,
+      "windows": 185,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "MG",
           "level": 5,
-          "damage": 4861.70279999999,
+          "damage": 5526.3497999999745,
           "branches": [
             "MG_A3",
             "MG_A5"
@@ -2156,7 +2164,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 53792.08179999995,
+          "damage": 55539.38159999993,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
@@ -2174,7 +2182,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 35600.58039999994,
+          "damage": 33188.633599999936,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
@@ -2190,7 +2198,7 @@
           ]
         }
       ],
-      "purchaseInterval": 26.131818181818563
+      "purchaseInterval": 26.679545454545337
     },
     {
       "loadout": [
@@ -2202,10 +2210,10 @@
       "seed": 18,
       "doctrine": "ASSAULT",
       "id": "MG-ARTILLERY-ENGINEER-hybrid-18-ASSAULT",
-      "at": "2026-09-05T11:59:27.148Z",
+      "at": "2026-09-05T23:23:06.372Z",
       "result": "HELD",
       "waves": 25,
-      "seconds": 958.499999999676,
+      "seconds": 966.0999999996691,
       "earned": 5801,
       "spent": 4700,
       "units": [
@@ -2224,13 +2232,13 @@
       "commands": 5,
       "reason": "防禦區已守住。",
       "offers": 4,
-      "windows": 205,
+      "windows": 191,
       "leakedBefore": 0,
       "finalPositions": [
         {
           "unit": "MG",
           "level": 5,
-          "damage": 6972.80159999993,
+          "damage": 7391.825999999923,
           "branches": [
             "MG_A3",
             "MG_A5"
@@ -2239,7 +2247,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 50438.85699999993,
+          "damage": 48643.61819999989,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
@@ -2257,7 +2265,7 @@
         {
           "unit": "ARTILLERY",
           "level": 5,
-          "damage": 36842.70639999994,
+          "damage": 38218.92079999998,
           "branches": [
             "ARTILLERY_A3",
             "ARTILLERY_A5"
@@ -2273,13 +2281,13 @@
           ]
         }
       ],
-      "purchaseInterval": 33.0659090909024
+      "purchaseInterval": 33.43636363635661
     }
   ],
   "summary": {
     "count": 27,
     "wins": 27,
-    "averageMinutes": 16.75873456789512,
-    "averagePurchaseInterval": 31.90502134635904
+    "averageMinutes": 16.794166666660523,
+    "averagePurchaseInterval": 31.989108404302243
   }
 }

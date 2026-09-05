@@ -14,6 +14,7 @@ import {
   type FieldOrderData,
 } from './data';
 import type { WWISave, RunRecord } from './save';
+import { permanentBonus } from './save';
 
 export type BattleState =
   | 'SETUP'
@@ -45,6 +46,7 @@ export interface EnemyFormation extends Point {
   progress: number;
   lane: number;
   suppressed: number;
+  barrageSlow: number;
   major: boolean;
   phase: number;
   timer: number;
@@ -132,6 +134,7 @@ export class VerdunEngine {
   private decisions: number[] = [];
   private sold: DefensiveUnitRuntime[] = [];
   private suppressionNext = 0;
+  private suppressionDue: number | null = null;
   readonly loadout: UnitId[];
   constructor(
     readonly save: WWISave,
@@ -171,8 +174,7 @@ export class VerdunEngine {
     return this.positions.filter(
       (p) =>
         p.unit === 'ENGINEER' &&
-        distance(SLOTS[slot], SLOTS[p.slot]) <=
-          UNITS.ENGINEER.range * (p.level === 5 ? 1.2 : 1),
+        distance(SLOTS[slot], SLOTS[p.slot]) <= this.range(p),
     );
   }
   buildCost(id: UnitId, slot: number) {
@@ -237,6 +239,8 @@ export class VerdunEngine {
     if (!p || p.level >= 5 || this.terminal() || this.state === 'ORDERS')
       return no('無法升級此陣地。');
     const level = p.level + 1;
+    if (level !== 3 && level !== 5 && branch)
+      return no('此等級尚未開放陣地專精。');
     if (
       (level === 3 || level === 5) &&
       !BRANCHES[p.unit][level].some((b) => b.id === branch)
@@ -295,6 +299,7 @@ export class VerdunEngine {
     this.elapsedSpawn = 0;
     this.telegraph = '';
     this.suppressionNext = 16;
+    this.suppressionDue = null;
     const act = Math.ceil(this.wave / 5),
       types: FormationId[] = [];
     for (let i = 0; i < 5 + act; i++) types.push('INFANTRY');
@@ -329,6 +334,7 @@ export class VerdunEngine {
       lane,
       ...samplePath(0, lane),
       suppressed: 0,
+      barrageSlow: 0,
       phase: 1,
       timer: major ? 7 : 0,
       stage: 'ADVANCE',
@@ -454,7 +460,8 @@ export class VerdunEngine {
   range(p: DefensiveUnitRuntime) {
     return (
       UNITS[p.unit].range *
-      (p.unit === 'ENGINEER' && p.level === 5 ? 1.2 : 1) *
+      (p.unit === 'ENGINEER' ? 1 + permanentBonus(this.save, p.unit) : 1) *
+      (p.branches.includes('ENGINEER_A5') ? 1.2 : 1) *
       (p.unit === 'ARTILLERY' && SLOTS[p.slot].terrain === '高地' ? 1.12 : 1) *
       (p.unit === 'ARTILLERY' && this.save.doctrine === 'ARTILLERY'
         ? 1.12
@@ -493,10 +500,7 @@ export class VerdunEngine {
   }
   private hit(p: DefensiveUnitRuntime, e: EnemyFormation, damage: number) {
     const strength =
-      (1 + (p.level - 1) * 0.22) *
-      (1 +
-        (this.save.units[p.unit].level - 1) * 0.05 +
-        (this.save.units[p.unit].mark - 1) * 0.05);
+      (1 + (p.level - 1) * 0.22) * (1 + permanentBonus(this.save, p.unit));
     const different = this.positions.some(
       (other) =>
         other.id !== p.id &&
@@ -519,7 +523,8 @@ export class VerdunEngine {
     )
       dealt *= 1.45;
     if (e.major) {
-      dealt *= e.stage === 'EXPOSED' ? (this.mod('TIMING') ? 1.85 : 1.5) : 0.75;
+      dealt *=
+        e.stage === 'EXPOSED' ? 1.5 * (this.mod('TIMING') ? 1.35 : 1) : 0.75;
     }
     dealt = Math.max(2, dealt - FORMATIONS[e.type].defense);
     p.damage += Math.min(Math.max(0, e.hp), dealt);
@@ -527,7 +532,7 @@ export class VerdunEngine {
     if (p.branches.includes('MG_A5'))
       e.suppressed = Math.max(e.suppressed, 1.5);
     if (p.unit === 'ARTILLERY' && this.mod('BARRAGE'))
-      e.suppressed = Math.max(e.suppressed, 2);
+      e.barrageSlow = Math.max(e.barrageSlow, 2);
     this.command = Math.min(
       100,
       this.command + 0.32 * (this.mod('COUNTER') ? 1.3 : 1),
@@ -666,18 +671,17 @@ export class VerdunEngine {
     }
     if (this.wave >= 6 && this.waveTime >= this.suppressionNext) {
       this.suppressionNext += 20;
-      this.telegraph = '炮兵準備射擊：敵軍即將壓制陣地。';
+      this.suppressionDue = this.waveTime + 3;
     }
-    if (
-      this.telegraph.startsWith('炮兵準備') &&
-      this.waveTime >= this.suppressionNext - 17
-    ) {
+    if (this.suppressionDue !== null && this.waveTime >= this.suppressionDue) {
       this.positions.forEach((p) => (p.reload += this.resilience(p) ? 1 : 3));
+      this.suppressionDue = null;
       this.telegraph = '炮擊壓制結束 · 保持交叉掩護。';
     }
     for (const e of this.formations) {
       if (e.hp <= 0) continue;
       e.suppressed = Math.max(0, e.suppressed - dt);
+      e.barrageSlow = Math.max(0, e.barrageSlow - dt);
       if (e.major) {
         e.phase = e.hp < e.maxHP * 0.35 ? 3 : e.hp < e.maxHP * 0.7 ? 2 : 1;
         e.timer -= dt;
@@ -702,7 +706,7 @@ export class VerdunEngine {
       e.progress +=
         ((dt * (e.major ? 1.35 : FORMATIONS[e.type].speed)) / 100) *
         mud *
-        (e.suppressed > 0 ? 0.75 : 1) *
+        (e.suppressed > 0 ? 0.75 : e.barrageSlow > 0 ? 0.8 : 1) *
         (this.slowing > 0 ? 0.55 : 1) *
         (e.stage === 'PREPARATION' ? 0.2 : 1);
       Object.assign(e, samplePath(e.progress, e.lane));
@@ -736,13 +740,14 @@ export class VerdunEngine {
         );
         this.fx('IMPACT', e, e, 0, 0.55);
       } else if (e.progress >= 1) {
-        this.strength -= e.major
+        const loss = e.major
           ? this.wave === 25
             ? this.strength
             : 5
           : e.type === 'SUPPORTED'
             ? 2
             : 1;
+        this.strength = Math.max(0, this.strength - loss);
         this.notice = e.major
           ? '重大攻勢突破交通線；嘗試在敵軍整隊時集中火力。'
           : e.type === 'ASSAULT'
@@ -757,6 +762,7 @@ export class VerdunEngine {
     }
     if (!this.queue.length && !this.formations.length && this.waveTime >= 23) {
       this.clearedWaves = this.wave;
+      this.suppressionDue = null;
       const bonus =
         12 +
         (this.mod('SUPPLY') ? 12 : 0) +
@@ -792,6 +798,7 @@ export class VerdunEngine {
     this.formations = [];
     this.queue = [];
     this.disruption = 0;
+    this.suppressionDue = null;
     this.telegraph = '';
     this.paused = false;
   }
@@ -817,7 +824,10 @@ export class VerdunEngine {
       orders: [...this.orders],
       offers: [...this.offers],
       notice: this.notice,
-      telegraph: this.telegraph,
+      telegraph:
+        this.suppressionDue === null
+          ? this.telegraph
+          : `炮兵準備射擊 · ${Math.max(0, Math.ceil(this.suppressionDue - this.waveTime))} 秒後壓制陣地。 ${this.telegraph}`,
       disruption: this.disruption,
       officerCD: this.officerCD,
       earned: this.earned,
