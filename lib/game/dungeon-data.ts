@@ -2,6 +2,7 @@ import { publicAssetPath } from './asset-path';
 import { getEarthTier } from './earth-tiers';
 import { EarthTierId, EnemyData, EnemyId, RealmType } from './types';
 import { ENEMY_VISUAL_PROFILES } from './visual-config';
+import type { MapTopology } from './battle-depth';
 
 function art(
   id: EnemyId,
@@ -227,6 +228,10 @@ export function createWaves(tierOrder = -1): WaveData[] {
 }
 
 export interface DungeonConfig {
+  topology?: MapTopology;
+  benchmark?: boolean;
+  minimumWaveDuration?: number;
+  trainingLoadout?: import('./types').TowerId[];
   id: string;
   name: string;
   englishName: string;
@@ -246,7 +251,20 @@ export interface DungeonConfig {
   bossTrait: string;
   waves: WaveData[];
 }
-export const TUTORIAL_WAVES = createWaves(-1);
+export function createGoldenWaves(): WaveData[] {
+  return Array.from({length:25}, (_, index) => {
+    const wave = index + 1, act = Math.ceil(wave / 5);
+    const groups: WaveGroup[] = [
+      {enemyId:'EARTH_GRUNT',count:6+act,interval:1.35},
+    ];
+    if (wave >= 2) groups.push({enemyId:'EARTH_RUNNER',count:2+Math.floor(act/2),interval:1.05});
+    if (wave >= 4) groups.push({enemyId:'EARTH_TANK',count:act,interval:1.8});
+    if (wave >= 9) groups.push({enemyId:'EARTH_SUPPORT',count:1,interval:1.4});
+    if (wave % 5 === 0) groups.push({enemyId:'EARTH_BOSS',count:1,interval:2});
+    return {wave,boss:wave%5===0,bossMultiplier:0.7+act*0.55,groups};
+  });
+}
+export const TUTORIAL_WAVES = createGoldenWaves();
 export const EARTH_TUTORIAL_DUNGEON: DungeonConfig = {
   id: 'EARTH_TUTORIAL_001',
   name: '新手試煉',
@@ -256,13 +274,15 @@ export const EARTH_TUTORIAL_DUNGEON: DungeonConfig = {
   tierOrder: -1,
   totalWaves: 25,
   startingBaseHP: 20,
-  startingGold: 420,
-  goldRewardMultiplier: 0.4,
+  startingGold: 300,
+  goldRewardMultiplier: 0.65,
+  benchmark: true,
+  minimumWaveDuration: 22,
   slotCount: 7,
   deploymentCap: 7,
   hpMultiplier: 1,
   defenseMultiplier: 1,
-  speedMultiplier: 1,
+  speedMultiplier: 0.65,
   bossName: '地脈破壞者',
   bossTrait: '重甲',
   waves: TUTORIAL_WAVES,
@@ -278,7 +298,8 @@ export function getEarthDungeon(tierID: EarthTierId): DungeonConfig {
     tierOrder: tier.order,
     totalWaves: 25,
     startingBaseHP: 20,
-    startingGold: 450 + tier.order * 25,
+    startingGold: 300 + Math.min(150, tier.order * 15),
+    minimumWaveDuration: tier.order >= 8 ? 36 : 30,
     goldRewardMultiplier: 0.42 + tier.order * 0.015,
     slotCount: 7,
     deploymentCap: 7,

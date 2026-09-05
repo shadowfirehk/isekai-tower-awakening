@@ -4,6 +4,7 @@
 /* Public artwork paths are injected by the layout so both root hosting and
    GitHub Pages subdirectory hosting resolve the same source assets. */
 @import 'shadcn/tailwind.css';
+@import './phase78.css';
 
 @custom-variant dark (&:is(.dark *));
 

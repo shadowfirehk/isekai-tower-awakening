@@ -1,0 +1,48 @@
+/* Phase 7.8: geometry and choices stay legible at normal browser zoom. */
+.tactical-route-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.tactical-route-lines polyline{fill:none;stroke:#83e7eb;stroke-width:.5;stroke-dasharray:1.5 1;opacity:.7}
+.tactical-battle .battle-path{display:none}
+.tactical-range{position:absolute;transform:translate(-50%,-50%);border:1px dashed #8efaff;border-radius:50%;background:#5effe510;z-index:2;pointer-events:none}
+.burn-zone{position:absolute;transform:translate(-50%,-50%);border:2px solid #ff8647;border-radius:50%;background:radial-gradient(#ff773448,#ff41a026 65%,transparent);z-index:4;pointer-events:none}
+.training-build-picker{padding:12px;border:1px solid #5191a8;margin-bottom:14px}
+.training-build-picker h3{font-size:17px;margin:0 0 8px}
+.training-build-picker p,.training-build-picker small{font-size:14px!important;line-height:1.5;display:block}
+.training-build-picker button{display:block;text-align:left;width:100%;padding:10px;margin-top:6px;border:1px solid #365260;background:#0b2330;color:#e3f8ff;font-size:16px;cursor:pointer}
+.training-build-picker button.active{border-color:#80f3e5;background:#17403b}
+.training-build-picker small{color:#a4c3ce;margin-top:4px}
+.run-history{margin-top:14px;text-align:left;border-top:1px solid #4d8799}
+.run-history p,.run-history small,.next-run-hint{font-size:14px!important;line-height:1.6;display:block}
+.run-tower-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.run-tower-list span{display:flex;flex-direction:column;padding:8px;background:#0b2731}
+.run-tower-list b,.run-tower-list small{font-size:14px!important;line-height:1.5}
+.tutorial-exercise{margin-top:18px;padding:14px;border:1px solid #71daea;background:#061a25}
+.tutorial-exercise header{display:flex!important;flex-wrap:wrap;gap:8px;justify-content:space-between;font-size:15px}
+.tutorial-exercise p{font-size:15px;line-height:1.6}
+.exercise-map{position:relative;height:230px;margin:15px 0;background:linear-gradient(145deg,#102638,#122f32);overflow:hidden}
+.exercise-lane{position:absolute;left:0;right:0;top:45%;height:12%;background:#31536d55;border-block:1px dashed #80d8dc}
+.exercise-slot{position:absolute;transform:translate(-50%,-50%);width:45px;height:45px;background:#093d4c;color:#c4ffff;border:1px solid #65cdd8;border-radius:50%;font-size:22px;cursor:pointer}
+.exercise-slot .tower-artwork{width:45px;height:55px;background-color:transparent}
+.exercise-enemy{position:absolute;transform:translate(-50%,-50%);width:42px;pointer-events:none}
+.exercise-enemy .enemy-artwork{width:42px;height:46px}
+.exercise-enemy small{display:block;font-size:12px;white-space:nowrap;color:#fff}
+.exercise-enemy progress{width:42px;height:5px;display:block}
+.exercise-enemy.vulnerable{filter:drop-shadow(0 0 7px #ffe67a)}
+.exercise-actions{display:flex;flex-wrap:wrap;gap:8px}
+.exercise-actions button{font-size:15px;padding:10px;background:#123e4a;border:1px solid #67c3d2;color:#e3ffff;cursor:pointer}
+.exercise-actions button:disabled{opacity:.45;cursor:default}
+.preparation-screen .training-mission{grid-template-columns:minmax(160px,.55fr) minmax(360px,1fr)}
+.preparation-screen .transmission-card{margin:16px;padding:18px}
+.preparation-screen .training-road b{font-size:16px}
+.preparation-screen .training-road small,.preparation-screen .training-road em{font-size:12px}
+.preparation-screen .training-objective b,.preparation-screen blockquote{font-size:15px;line-height:1.6}
+@media(max-width:900px){.preparation-screen .training-layout{grid-template-columns:1fr}.preparation-screen .training-road{display:flex;overflow:auto}.preparation-screen .training-road article{min-width:160px}.preparation-screen .training-mission{display:block}.preparation-screen .training-scan{display:none}.run-tower-list{grid-template-columns:1fr}}
+/* Imported before the legacy rules: specificity protects key text sizes. */
+.battle-screen.phase77a .tower-chip b,.battle-screen.phase77a .battle-controls button,.battle-screen.phase77a .battle-upgrade-button{font-size:16px;line-height:1.35}
+.battle-screen.phase77a .tower-chip small,.battle-screen.phase77a .tower-growth-panel span,.battle-screen.phase77a .battle-controls small,.battle-screen.phase77a .tower-skill-button small{font-size:13px;line-height:1.4}
+.battle-screen.phase77a .boss-hud header b{font-size:20px}
+.battle-screen.phase77a .boss-telegraph{font-size:15px;line-height:1.4}
+.battle-screen.phase77a .blessing-card p,.battle-screen.phase77a .branch-card p,.battle-screen.phase77a .blessing-card small{font-size:16px;line-height:1.6}
+.battle-screen.phase77a .selected-tower label,.battle-screen.phase77a .selected-tower header b{font-size:14px}
+.battle-screen.phase77a .deployment-panel{overflow:auto}
+.battle-screen.phase77a .result-stats span,.battle-screen.phase77a .result-build-summary small{font-size:14px}
+@media(max-width:1000px) and (orientation:landscape){.battle-screen.phase77a .deployment-panel{width:290px}.battle-screen.phase77a{grid-template-columns:minmax(0,1fr) 290px}.battle-screen.phase77a .battle-controls{overflow-x:auto}.battle-screen.phase77a .tower-chip{min-height:62px}}

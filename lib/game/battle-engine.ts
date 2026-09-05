@@ -4,7 +4,6 @@ import {
   DamageSnapshot,
   makeDamageSnapshot,
   resolveDamage,
-  selectTarget,
 } from './combat';
 import {
   DungeonConfig,
@@ -52,6 +51,7 @@ import {
   interpolateHeading,
   sampleBattlePath,
 } from './battle-readability';
+import { SLOT_LAYOUTS, pointDistance, towerRangeRadius, onShotLine } from './battle-geometry';
 
 type EnemyStatus = BossMechanic | 'SHOCKED';
 export interface EnemyRuntime {
@@ -93,6 +93,7 @@ export interface EnemyRuntime {
   state: 'ALIVE' | 'DYING' | 'DEAD';
 }
 export interface TowerRuntime {
+  focusTime: number;
   runtimeId: number;
   towerId: TowerId;
   slot: number;
@@ -175,6 +176,16 @@ interface SpawnEntry {
   delay: number;
 }
 export interface BattleMetrics {
+  waveReached: number;
+  averageTowerCount: number;
+  averageBattleLevel: number;
+  towerUsage: Partial<Record<TowerId,number>>;
+  upgradesByTower: Partial<Record<TowerId,number>>;
+  branchSelections: string[];
+  synergyActivations: string[];
+  bossPhaseDeaths: Record<string,number>;
+  leaksByRole: Record<string,number>;
+  towersUsed: {towerId:TowerId;level:number;branches:string[];investedGold:number;sold:boolean}[];
   runDuration: number;
   averageDecisionInterval: number;
   skillUses: number;
@@ -192,11 +203,13 @@ export interface BattleMetrics {
   economyByWave: Partial<
     Record<
       number,
-      { gold: number; towerCount: number; averageBattleLevel: number }
+      { gold: number; earned:number; spent:number; towerCount: number; averageBattleLevel: number }
     >
   >;
 }
 export interface BattleSnapshot {
+  clearedWaves: number;
+  damageZones: {id:number;x:number;y:number;radius:number;remaining:number}[];
   state: BattleState;
   wave: number;
   baseHP: number;
@@ -284,6 +297,7 @@ export class TowerFactory {
       targetId: null,
       targetingMode: 'FIRST',
       shots: 0,
+      focusTime: 0,
       skillCooldown: 0,
       skillActiveRemaining: 0,
       overdriveRemaining: 0,
@@ -351,6 +365,19 @@ export class BattleEngine {
   private goldEventSerial = 0;
   private retiredTowers = new Map<number, TowerRuntime>();
   private cameraShakeRemaining = 0;
+  private clearedWaves = 0;
+  private waveElapsed = 0;
+  private towerTime = 0;
+  private levelTime = 0;
+  private towerUsage: BattleMetrics['towerUsage'] = {};
+  private upgradesByTower: BattleMetrics['upgradesByTower'] = {};
+  private branchSelections: string[] = [];
+  private synergyActivations = new Set<string>();
+  private bossPhaseDeaths: Record<string,number> = {};
+  private leaksByRole: Record<string,number> = {};
+  private soldTowers: TowerRuntime[] = [];
+  private damageZones: {id:number;x:number;y:number;radius:number;remaining:number;cooldown:number;tower:TowerRuntime;damage:number}[] = [];
+  private lastLeakHint = '';
   constructor(
     save: PlayerSave,
     dungeon: DungeonConfig = EARTH_TUTORIAL_DUNGEON,
@@ -363,15 +390,39 @@ export class BattleEngine {
     this.seed = seed >>> 0;
   }
   private topology() {
+    if (this.dungeon.topology) return this.dungeon.topology;
     return this.dungeon.tierID
       ? MAP_TOPOLOGY_BY_TIER[this.dungeon.tierID]
       : ('MERGE' as MapTopology);
   }
   private synergies() {
-    return SynergyManager.evaluate(this.deployed.map((t) => t.towerId));
+    return SynergyManager.evaluate(this.deployed.map((t) => t.towerId)).filter(s =>
+      s.synergyID !== 'S_HOLY_KING' ||
+      (this.save.earthCareer === 'EARTH_WALL_GUARDIAN' &&
+        this.deployed.some(a=>a.towerId===s.requiredTowerIDs[0] &&
+          this.deployed.some(b=>b.towerId===s.requiredTowerIDs[1] && pointDistance(this.towerPoint(a),this.towerPoint(b)) <= 30))));
   }
+  private towerPoint(tower:TowerRuntime) { return SLOT_LAYOUTS[this.topology()][tower.slot]; }
+  private enemyPoint(enemy:EnemyRuntime) { return {x:enemy.pathX,y:enemy.pathY}; }
+  private random = () => {
+    let x = this.seed || 0x7f4a7c15;
+    x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
+    this.seed = x >>> 0;
+    return this.seed / 4294967296;
+  };
+  setRetryCount(count:number) { this.retryCount = Math.max(0,Math.floor(count)); }
   private metrics(): BattleMetrics {
     return {
+      waveReached:this.wave,
+      averageTowerCount:this.runDuration ? this.towerTime/this.runDuration : this.deployed.length,
+      averageBattleLevel:this.towerTime ? this.levelTime/this.towerTime : 1,
+      towerUsage:{...this.towerUsage},
+      upgradesByTower:{...this.upgradesByTower},
+      branchSelections:[...this.branchSelections],
+      synergyActivations:[...this.synergyActivations],
+      bossPhaseDeaths:{...this.bossPhaseDeaths},
+      leaksByRole:{...this.leaksByRole},
+      towersUsed:[...this.soldTowers,...this.deployed].map(t=>({towerId:t.towerId,level:t.battleLevel,branches:[t.branchLv3,t.branchLv5].filter((id):id is string=>!!id),investedGold:t.investedGold,sold:this.soldTowers.includes(t)})),
       runDuration: this.runDuration,
       averageDecisionInterval:
         this.decisions.length > 1
@@ -395,6 +446,8 @@ export class BattleEngine {
   }
   snapshot(): BattleSnapshot {
     return {
+      clearedWaves:this.clearedWaves,
+      damageZones:this.damageZones.map(({id,x,y,radius,remaining})=>({id,x,y,radius,remaining})),
       state: this.state,
       wave: this.wave,
       baseHP: this.baseHP,
@@ -452,6 +505,7 @@ export class BattleEngine {
     this.decisions.push(this.runDuration);
   }
   private allowedTowers() {
+    if(this.dungeon.trainingLoadout) return [...new Set(this.dungeon.trainingLoadout)].slice(0,3);
     return this.dungeon.tierID
       ? this.save.earthLoadout
       : GOLDEN_TUTORIAL_LOADOUT;
@@ -479,7 +533,7 @@ export class BattleEngine {
     if (this.deployed.some((t) => t.slot === slot))
       return { ok: false as const, error: '此部署槽已被佔用。' };
     if (
-      slot < 0 ||
+      !Number.isInteger(slot) || slot < 0 ||
       slot >= Math.min(this.dungeon.slotCount, SLOT_PROGRESS.length)
     )
       return {
@@ -508,6 +562,21 @@ export class BattleEngine {
     this.changeGold(-cost, `建造 ${getTowerById(towerId)?.name ?? towerId}`);
     this.goldSpent += cost;
     this.buildPurchases++;
+    this.towerUsage[towerId] = (this.towerUsage[towerId] ?? 0) + 1;
+    if (this.dungeon.benchmark) {
+      // Loan units use a shared tactical budget; rarity does not trivialize the benchmark.
+      const attack:Record<TowerId,number> = {
+        EARTH_BASIC_AUTO_TURRET:110,EARTH_RAPID_FIRE_TURRET:80,EARTH_ARMOR_PIERCING_TURRET:210,
+        EARTH_BLAST_TURRET:175,EARTH_THUNDER_TURRET:120,EARTH_DIVINE_JUDGMENT_TURRET:290,
+        EARTH_PHANTOM_TURRET:155,EARTH_KING_AUTHORITY_TURRET:160,EARTH_EMPEROR_ANNIHILATION_TURRET:270,
+        EARTH_VENERABLE_TURRET:190,EARTH_SAINT_DOMAIN_TURRET:195,EARTH_SOVEREIGN_END_TURRET:250,
+      };
+      const scaling = 1 + Math.min(0.5,(tower.permanentLevel-1)*0.025+(tower.permanentStars-1)*0.07);
+      tower.baseStats.attack = attack[towerId]*scaling;
+      tower.baseStats.range = getTowerById(towerId)!.baseStats.range;
+      tower.baseStats.attackSpeed = getTowerById(towerId)!.baseStats.attackSpeed;
+      tower.baseStats.penetration = Math.min(110,getTowerById(towerId)!.baseStats.penetration);
+    }
     this.deployed.push(tower);
     this.refreshTowerStats();
     this.state = this.state === 'SETUP' ? 'READY' : this.state;
@@ -522,7 +591,9 @@ export class BattleEngine {
     if (!tower) return { ok: false as const, error: '炮塔不存在。' };
     const refund = Math.floor(tower.investedGold * 0.7);
     this.deployed = this.deployed.filter((t) => t.runtimeId !== runtimeId);
-    this.retiredTowers.set(runtimeId, tower);
+    this.soldTowers.push({...tower});
+    this.projectiles = this.projectiles.filter(p=>p.sourceTowerId !== runtimeId);
+    this.damageZones = this.damageZones.filter(zone=>zone.tower.runtimeId !== runtimeId);
     this.changeGold(
       refund,
       `出售 ${getTowerById(tower.towerId)?.name ?? tower.towerId}`,
@@ -562,6 +633,8 @@ export class BattleEngine {
     this.changeGold(-cost, `Battle Lv.${targetLevel}`);
     this.goldSpent += cost;
     this.upgradePurchases++;
+    this.upgradesByTower[tower.towerId] = (this.upgradesByTower[tower.towerId] ?? 0)+1;
+    if(branchID) this.branchSelections.push(branchID);
     tower.investedGold += cost;
     tower.battleLevel = targetLevel;
     if (targetLevel === 3) tower.branchLv3 = branchID ?? null;
@@ -612,7 +685,12 @@ export class BattleEngine {
     )
       return;
     const delta = Math.min(0.12, Math.max(0, rawDelta)) * this.speed;
-    if (!['SETUP', 'READY'].includes(this.state)) this.runDuration += delta;
+    if (!['SETUP', 'READY'].includes(this.state)) {
+      this.runDuration += delta;
+      this.towerTime += this.deployed.length*delta;
+      this.levelTime += this.deployed.reduce((sum,t)=>sum+t.battleLevel,0)*delta;
+      for(const synergy of this.synergies()) this.synergyActivations.add(synergy.synergyID);
+    }
     this.updateTemporary(delta);
     if (
       ['BOSS_WARNING', 'WAVE_STARTING', 'WAVE_CLEAR', 'INTERMISSION'].includes(
@@ -624,22 +702,26 @@ export class BattleEngine {
       return;
     }
     if (this.state !== 'WAVE_ACTIVE') return;
+    this.waveElapsed += delta;
     this.updateSpawning(delta);
     this.updateBossMechanics(delta);
     this.updateEnemies(delta);
     this.refreshTowerStats();
-    this.updateTowers();
+    this.updateTowers(delta);
     this.updateProjectiles(delta);
+    this.updateDamageZones(delta);
     this.finalizeDeaths();
     if (this.baseHP <= 0) {
       this.baseHP = 0;
       this.state = 'DEFEAT';
       this.defeatHint = this.makeDefeatHint();
+      this.clearRunEffects();
       this.notice = '基地核心失守。';
       return;
     }
     if (
       !this.spawnQueue.length &&
+      this.waveElapsed >= (this.dungeon.minimumWaveDuration ?? 0) &&
       !this.enemies.some((e) => e.state === 'ALIVE') &&
       !this.projectiles.length
     ) {
@@ -647,9 +729,11 @@ export class BattleEngine {
       this.stateTimer = 0.45;
       this.notice = `WAVE ${String(this.wave).padStart(2, '0')} CLEAR`;
       this.recordEconomyCheckpoint();
+      this.clearedWaves = this.wave;
     }
   }
   private startNextWave() {
+    this.waveElapsed = 0;
     this.wave = Math.min(this.dungeon.totalWaves, this.wave + 1);
     const waveData = this.dungeon.waves[this.wave - 1];
     this.spawnQueue = waveData.groups.flatMap((group) =>
@@ -674,6 +758,7 @@ export class BattleEngine {
     else if (this.state === 'WAVE_CLEAR') {
       if (this.wave >= this.dungeon.totalWaves) {
         this.state = 'VICTORY';
+        this.clearRunEffects();
         this.notice = `${this.dungeon.name} · 25 波全數清除`;
       } else if (BLESSING_WAVES.has(this.wave)) {
         this.openBlessingChoice();
@@ -690,6 +775,7 @@ export class BattleEngine {
       this.deployed.map((t) => t.towerId),
       this.activeBlessings,
       SynergyManager.tags(this.deployed.map((t) => t.towerId)),
+      {career:this.save.earthCareer,enemyTypes:this.dungeon.waves.flatMap(w=>w.groups.map(g=>g.enemyId)),benchmark:this.dungeon.benchmark},
     );
     this.seed = offer.seed;
     this.blessingOptions = offer.options;
@@ -772,7 +858,7 @@ export class BattleEngine {
     if (tower.skillActiveRemaining > 0)
       return { ok: false as const, error: '此技能已在作用中。' };
     const cooldownReduction =
-      this.collectModifiers(tower).cooldownReduction ?? 0;
+      (this.collectModifiers(tower).cooldownReduction ?? 0) + (this.battleUpgradeModifiers(tower).cooldownReduction ?? 0);
     tower.skillCooldown =
       skill.cooldown * Math.max(0.35, 1 - cooldownReduction);
     tower.skillActiveRemaining = skill.duration;
@@ -790,7 +876,7 @@ export class BattleEngine {
     else if (skill.effect === 'METEOR')
       alive
         .filter(
-          (e) => !highest || Math.abs(e.progress - highest.progress) < 0.2,
+          (e) => !highest || pointDistance(this.enemyPoint(e),this.enemyPoint(highest)) < 22,
         )
         .forEach((e) => this.directDamage(e, tower, tower.stats.attack * 2.2));
     else if (skill.effect === 'JUDGMENT' && highest)
@@ -853,7 +939,8 @@ export class BattleEngine {
       if (
         data.blessingID === 'B_PERFECT_LINE' ||
         data.blessingID === 'B_LAST_STAND' ||
-        data.blessingID === 'B_OVERCLOCK_FIELD'
+        data.blessingID === 'B_OVERCLOCK_FIELD' ||
+        data.blessingID === 'B_OPEN_PLATES'
       )
         continue;
       const specific =
@@ -927,6 +1014,11 @@ export class BattleEngine {
           (mod.attackPercent ?? 0) + (battleMod.attackPercent ?? 0),
         speedPercent =
           (mod.attackSpeedPercent ?? 0) + (battleMod.attackSpeedPercent ?? 0);
+      if (this.hasBranchEffect(tower,'SPEED_RAMP')) speedPercent += Math.min(0.48,tower.focusTime*0.08);
+      const nearbyAura = this.deployed.some(a => a.runtimeId!==tower.runtimeId &&
+        (this.hasBranchEffect(a,'AURA') || this.hasBranchEffect(a,'SANCTUARY')) &&
+        pointDistance(this.towerPoint(a),this.towerPoint(tower)) <= 26);
+      if (nearbyAura) { attackPercent += 0.15; stats.defense *= 1.15; }
       if (
         this.baseHP === this.dungeon.startingBaseHP &&
         this.activeBlessings.some((b) => b.blessingID === 'B_PERFECT_LINE')
@@ -988,7 +1080,7 @@ export class BattleEngine {
     const entry = this.spawnQueue.shift();
     if (!entry) return;
     this.spawnEnemy(entry.enemyId);
-    this.spawnTimer = Math.max(0.08, entry.delay * 0.72);
+    this.spawnTimer = Math.max(0.08, entry.delay * (this.dungeon.benchmark ? 1 : 0.9));
   }
   private spawnEnemy(enemyId: EnemyId) {
     const data = ENEMY_CATALOG[enemyId],
@@ -1088,6 +1180,31 @@ export class BattleEngine {
           boss.defense = boss.baseDefense;
           this.bossTelegraph = '裝甲重新閉合';
         }
+      }
+      if (this.dungeon.benchmark) {
+        const nextPhase = ratio <= 0.35 ? 3 : ratio <= 0.7 ? 2 : 1;
+        if (nextPhase > boss.phase) {
+          boss.phase = nextPhase;
+          boss.shieldHP += boss.maxHP * 0.1;
+          boss.maxShieldHP = Math.max(boss.maxShieldHP,boss.shieldHP);
+          boss.mechanicTimer = 3;
+          this.bossTelegraph = `第 ${nextPhase} 階段 · 3 秒後裝甲展開`;
+        }
+        if (boss.mechanicTimer <= 0) {
+          if(boss.statuses.includes('CHARGE')) {
+            boss.statuses = ['VULNERABLE'];
+            boss.vulnerableRemaining = 6;
+            boss.defense = boss.baseDefense*0.5;
+            boss.mechanicTimer = 6;
+            this.bossTelegraph = '核心暴露 6 秒 · 技能與超載爆發時機';
+          } else {
+            boss.statuses = ['CHARGE'];
+            boss.defense = boss.baseDefense*1.5;
+            boss.mechanicTimer = 4;
+            this.bossTelegraph = '充能 4 秒 · 即將暴露核心';
+          }
+        }
+        continue;
       }
       const trigger = (key: string, action: () => void) => {
         if (boss.triggered.includes(key)) return;
@@ -1244,10 +1361,15 @@ export class BattleEngine {
         1 - Math.exp(-10 * delta),
       );
       if (enemy.progress >= 1) {
+        this.leaksByRole[enemy.role] = (this.leaksByRole[enemy.role] ?? 0)+1;
+        if(enemy.boss) {
+          this.bossPhaseDeaths[`PHASE_${enemy.phase}`] = (this.bossPhaseDeaths[`PHASE_${enemy.phase}`] ?? 0)+1;
+          this.lastLeakHint = enemy.shieldHP>0 ? '頭目帶著未破護盾突破基地；下次可調整爆發時機。' : '頭目突破基地；留意充能後的弱點窗與最後防線。';
+        } else if(enemy.enemyId==='EARTH_RUNNER') this.lastLeakHint = '疾行敵人穿越防線；檢查短路線的覆蓋與鎖定方式。';
         enemy.progress = 1;
         enemy.state = 'DYING';
         const modifiers = this.baseModifiers(),
-          raw = enemy.boss ? 5 : Math.max(1, enemy.baseDamage),
+          raw = enemy.boss ? (this.wave === this.dungeon.totalWaves ? this.dungeon.startingBaseHP*5 : 5) : Math.max(1, enemy.baseDamage),
           reduction = Math.min(
             0.95,
             (this.careerSkillRemaining > 0 ? 0.8 : 0) +
@@ -1255,6 +1377,7 @@ export class BattleEngine {
           ),
           damage = Math.max(0, Math.round(raw * (1 - reduction)));
         this.baseHP -= damage;
+        if(enemy.boss && this.wave===this.dungeon.totalWaves) this.baseHP=0;
         this.baseDamageTaken += damage;
       }
     }
@@ -1269,23 +1392,22 @@ export class BattleEngine {
       addModifiers(result, synergy.modifiers);
     return result;
   }
-  private updateTowers() {
+  private updateTowers(delta:number) {
     for (const tower of this.deployed) {
       const current =
           this.enemies.find(
             (e) => e.runtimeId === tower.targetId && e.state === 'ALIVE',
           ) ?? null,
-        inRange =
-          current &&
-          Math.abs(current.progress - tower.progress) <= tower.stats.range / 20,
+        inRange = current && pointDistance(this.towerPoint(tower),this.enemyPoint(current)) <= towerRangeRadius(tower.stats.range),
         target = inRange
           ? current
-          : selectTarget(
-              this.enemies,
-              tower.progress,
-              tower.stats.range,
-              tower.targetingMode,
-            );
+          : this.enemies.filter(e=>e.state==='ALIVE' &&
+              pointDistance(this.towerPoint(tower),this.enemyPoint(e))<=towerRangeRadius(tower.stats.range))
+            .sort((a,b)=>tower.targetingMode==='STRONGEST' ? b.hp-a.hp :
+              tower.targetingMode==='WEAKEST' ? a.hp-b.hp :
+              tower.targetingMode==='NEAREST' ? pointDistance(this.towerPoint(tower),this.enemyPoint(a))-pointDistance(this.towerPoint(tower),this.enemyPoint(b)) :
+              b.progress-a.progress)[0];
+      tower.focusTime = target && target.runtimeId===tower.targetId ? tower.focusTime+delta : 0;
       tower.targetId = target?.runtimeId ?? null;
       if (!target || tower.cooldown > 0) continue;
       tower.cooldown = 1 / Math.max(0.1, tower.stats.attackSpeed);
@@ -1320,7 +1442,7 @@ export class BattleEngine {
         attackPattern: data.attackPattern,
         maxTargets: pierce
           ? this.enemies.length
-          : data.maxTargets + chainBonus + (battleMod.maxTargets ?? 0),
+          : (tower.towerId==='EARTH_ARMOR_PIERCING_TURRET' ? 2 : data.maxTargets) + chainBonus + (battleMod.maxTargets ?? 0),
         bossDamageMultiplier:
           data.bossDamageMultiplier * (1 + (battleMod.bossDamagePercent ?? 0)),
         skillPierce: pierce,
@@ -1335,6 +1457,17 @@ export class BattleEngine {
         sequenceIndex: tower.shots % 3,
       };
       this.projectiles.push(projectile);
+      if (this.hasBranchEffect(tower,'SECOND_TARGET') &&
+        (tower.towerId==='EARTH_RAPID_FIRE_TURRET' ? this.random()<0.3 : tower.shots%4===0)) {
+        const secondary = this.enemies.find(e=>e.state==='ALIVE'&&e.runtimeId!==target.runtimeId&&pointDistance(this.enemyPoint(e),this.enemyPoint(target))<18);
+        if(secondary) this.projectiles.push({...projectile,runtimeId:this.id++,targetId:secondary.runtimeId,maxTargets:1});
+      }
+      if (this.hasBranchEffect(tower,'STORM_STRIKE') && tower.shots%6===0) this.directDamage(target,tower,tower.stats.attack*1.8);
+      if (tower.towerId==='EARTH_RAPID_FIRE_TURRET' && target.statuses.includes('SHOCKED') && this.synergies().some(s=>s.synergyID==='S_RAPID_THUNDER')) {
+        this.overdriveEnergy = Math.min(100,this.overdriveEnergy+0.45);
+        tower.skillCooldown = Math.max(0,tower.skillCooldown-0.35);
+      }
+      if (tower.towerId==='EARTH_THUNDER_TURRET' && !target.statuses.includes('SHOCKED')) target.statuses.push('SHOCKED');
       if (this.hasBranchEffect(tower, 'DOUBLE_SHOT_5') && tower.shots % 5 === 0)
         this.projectiles.push({
           ...projectile,
@@ -1379,8 +1512,13 @@ export class BattleEngine {
     if (target.hp / target.maxHP < 0.18)
       value *= 1 + (battleMod.executeDamagePercent ?? 0);
     if (this.hasBranchEffect(tower, 'FOCUS_RAMP'))
-      value *= 1 + Math.min(0.28, tower.shots * 0.0025);
+      value *= 1 + Math.min(0.5, tower.focusTime * 0.06);
     if (target.statuses.includes('VULNERABLE')) value *= 1.55;
+    if(target.statuses.includes('VULNERABLE')) {
+      if(this.activeBlessings.some(b=>b.blessingID==='B_OPEN_PLATES')) value *= 1.35;
+      if(this.synergies().some(s=>s.synergyID==='S_SIEGE_LINE')) value *= 1.25;
+      if(this.hasBranchEffect(tower,'WEAK_POINT')) value *= 1.2;
+    }
     if (
       target.statuses.includes('SHOCKED') &&
       tower.towerId === 'EARTH_RAPID_FIRE_TURRET' &&
@@ -1404,7 +1542,7 @@ export class BattleEngine {
         (e) =>
           e.state === 'ALIVE' &&
           e.supportAura > 0 &&
-          Math.abs(e.progress - target.progress) < 0.14,
+          pointDistance(this.enemyPoint(e),this.enemyPoint(target)) < 18,
       ),
       tower =
         this.deployed.find((t) => t.runtimeId === projectile.sourceTowerId) ??
@@ -1412,7 +1550,10 @@ export class BattleEngine {
     if (!tower) return;
     const result = resolveDamage(
         projectile.snapshot,
-        target.defense * (support ? 1.2 : 1),
+        this.hasBranchEffect(tower,'IGNORE_DEFENSE')
+          ? projectile.snapshot.penetration + Math.max(0,target.defense*(support?1.2:1)-projectile.snapshot.penetration)*0.55
+          : target.defense*(support?1.2:1),
+        this.random,
       ),
       damage =
         result.damage *
@@ -1420,6 +1561,12 @@ export class BattleEngine {
         (target.boss ? projectile.bossDamageMultiplier : 1) *
         this.combatMultiplier(tower, target, projectile, result.critical);
     const applied = this.applyDamage(target, tower, damage);
+    if (projectile.attackPattern==='AOE' &&
+      ((result.critical && (this.synergies().some(s=>s.synergyID==='S_BLAST_END') || this.activeBlessings.some(b=>b.blessingID==='B_CHAIN_REACTION'))) ||
+       (target.hp<=0 && this.hasBranchEffect(tower,'CHAIN_EXPLOSION')))) {
+      for(const other of this.enemies.filter(e=>e.state==='ALIVE'&&e.runtimeId!==target.runtimeId&&pointDistance(this.enemyPoint(e),this.enemyPoint(target))<12).slice(0,4))
+        this.directDamage(other,tower,damage*0.3);
+    }
     this.emitHitFeedback(
       target,
       tower,
@@ -1452,6 +1599,7 @@ export class BattleEngine {
       }
     }
     if (damage > 0) {
+      damage = Math.min(target.hp,damage);
       target.hp = Math.max(0, target.hp - damage);
       total += damage;
       this.recordDamage(tower, damage);
@@ -1580,6 +1728,10 @@ export class BattleEngine {
       );
       if (!target) continue;
       this.hit(target, projectile);
+      const source = this.deployed.find(t=>t.runtimeId===projectile.sourceTowerId);
+      if(source && this.hasBranchEffect(source,'BURN_FIELD') && this.damageZones.length < 18) {
+        this.damageZones.push({id:this.id++,x:target.pathX,y:target.pathY,radius:12,remaining:3,cooldown:0,tower:source,damage:projectile.snapshot.attack*0.18});
+      }
       if (projectile.maxTargets > 1) {
         const extras = this.enemies
           .filter(
@@ -1587,13 +1739,15 @@ export class BattleEngine {
               e.state === 'ALIVE' &&
               e.runtimeId !== target.runtimeId &&
               (projectile.attackPattern === 'AOE'
-                ? Math.abs(e.progress - target.progress) < 0.14
-                : true),
+                ? pointDistance(this.enemyPoint(e),this.enemyPoint(target)) < 14*(1+(source ? this.battleUpgradeModifiers(source).radiusPercent ?? 0 : 0))
+                : projectile.towerId==='EARTH_ARMOR_PIERCING_TURRET' || projectile.towerId==='EARTH_EMPEROR_ANNIHILATION_TURRET'
+                  ? !!source && onShotLine(this.towerPoint(source),this.enemyPoint(target),this.enemyPoint(e)) && pointDistance(this.towerPoint(source),this.enemyPoint(e))<towerRangeRadius(source.stats.range)*1.4
+                  : pointDistance(this.enemyPoint(e),this.enemyPoint(target)) < 22),
           )
           .sort(
             (a, b) =>
-              Math.abs(a.progress - target.progress) -
-              Math.abs(b.progress - target.progress),
+              pointDistance(this.enemyPoint(a),this.enemyPoint(target)) -
+              pointDistance(this.enemyPoint(b),this.enemyPoint(target)),
           )
           .slice(0, projectile.maxTargets - 1);
         extras.forEach((enemy, index) =>
@@ -1603,8 +1757,8 @@ export class BattleEngine {
             projectile.skillPierce
               ? 1
               : projectile.attackPattern === 'CHAIN'
-                ? Math.max(0.48, 0.82 - index * 0.08)
-                : 0.68,
+                ? Math.max(0.48, (source && this.hasBranchEffect(source,'CHAIN_PRESERVE') ? 0.95-index*0.02 : 0.82-index*0.08))
+                : source && this.hasBranchEffect(source,'PIERCE_PRESERVE') ? 0.9 : 0.68,
           ),
         );
       }
@@ -1627,6 +1781,8 @@ export class BattleEngine {
       : 0;
     this.economyByWave[this.wave] = {
       gold: this.battleGold,
+      earned:this.goldEarned,
+      spent:this.goldSpent,
       towerCount: this.deployed.length,
       averageBattleLevel,
     };
@@ -1672,6 +1828,7 @@ export class BattleEngine {
     return rows;
   }
   private makeDefeatHint() {
+    if(this.lastLeakHint) return this.lastLeakHint;
     const boss = this.enemies.find((e) => e.boss);
     if (boss?.shieldHP)
       return '頭目屏障仍未擊破；保留 Overdrive 與持續火力處理護盾。';
@@ -1682,6 +1839,21 @@ export class BattleEngine {
     if (this.baseDamageTaken > this.dungeon.startingBaseHP * 0.5)
       return '高速敵人穿越防線；使用連射技能或調整 FIRST 鎖定。';
     return '本次傷害曲線不足；嘗試不同祝福流派或在 Boss 弱點期爆發。';
+  }
+  private clearRunEffects() {
+    this.battleGold=0;
+    this.projectiles=[]; this.damageZones=[]; this.impacts=[]; this.damageNumbers=[];
+    this.overdriveEnergy=0;
+  }
+  private updateDamageZones(delta:number) {
+    for(const zone of this.damageZones) {
+      zone.remaining-=delta; zone.cooldown-=delta;
+      if(zone.cooldown>0) continue;
+      zone.cooldown=0.5;
+      for(const enemy of this.enemies.filter(e=>e.state==='ALIVE' && pointDistance(this.enemyPoint(e),zone)<=zone.radius))
+        this.directDamage(enemy,zone.tower,zone.damage);
+    }
+    this.damageZones=this.damageZones.filter(z=>z.remaining>0);
   }
   debugJump(wave: number) {
     this.enemies = [];

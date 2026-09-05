@@ -13,6 +13,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { PlayerSave } from '@/lib/game/types';
+import { TutorialExercise } from './tutorial-exercise';
 
 const MILESTONES = [
   {
@@ -44,9 +45,9 @@ const MILESTONES = [
     icon: Swords,
     title: '炮塔成長',
     dialogue:
-      '「一次有效強化，勝過十次沒有目的的重複作戰。把素材投向你的核心流派。」',
+      '「擊破敵人會取得本局金幣。現在試試升級：集中火力，還是留錢多建一座？」',
     action: '完成強化演算',
-    lesson: '星級 3★／5★會出現更強的能量環與覺醒效果。',
+    lesson: '戰鬥等級只在本局有效；Lv3／Lv5 可選擇不同攻擊分支。',
   },
   {
     day: 4,
@@ -92,7 +93,7 @@ export function PreparationScreen({
           返回主畫面
         </button>
         <div>
-          <p>FIVE-DAY FIELD PREPARATION · PHASE 7.5</p>
+          <p>FIVE-DAY FIELD PREPARATION · PHASE 7.8</p>
           <h1>地球防線實戰準備</h1>
         </div>
         <span>
@@ -154,11 +155,7 @@ export function PreparationScreen({
                 全部準備完成 · 返回主畫面
               </button>
             ) : (
-              <button className="primary-action" onClick={onComplete}>
-                <TowerControl />
-                {current.action}
-                <ChevronRight />
-              </button>
+              <TutorialExercise key={index} day={index+1} save={save} onComplete={onComplete}/>
             )}
           </article>
         </section>

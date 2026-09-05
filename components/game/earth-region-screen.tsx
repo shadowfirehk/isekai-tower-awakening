@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { EARTH_TIER_CONFIGS, getEarthTier } from '@/lib/game/earth-tiers';
 import { EarthProgressionService } from '@/lib/game/earth-progression-service';
+import { RunRewardService } from '@/lib/game/run-reward-service';
 import { getMaterialData } from '@/lib/game/materials';
 import { getTowerById } from '@/lib/game/towers';
 import {
@@ -81,17 +82,17 @@ export function EarthRegionScreen({
     onEnter(selected);
   };
   const sweep = () => {
-    if (!progress.cleared) {
+    if (!RunRewardService.canSweep(save,selected)) {
       setFeedback('必須先手動完成此階級才能快速掃蕩。');
       return;
     }
-    const result = EarthProgressionService.commitVictory(
+    const result = RunRewardService.sweep(
       save,
       selected,
       `sweep-${selected}-${Date.now()}`,
     );
     if (!result.ok) {
-      setFeedback(result.message);
+      setFeedback(result.error);
       return;
     }
     onCommitted(result.save, `${tier.name}階快速掃蕩完成，素材已保存`);
@@ -315,7 +316,7 @@ export function EarthRegionScreen({
               進入 {tier.name} 階 25 波試煉
               <ChevronRight />
             </button>
-            {progress.cleared && (
+            {RunRewardService.canSweep(save,selected) && (
               <button className="sweep-button" onClick={sweep}>
                 <Sparkles />
                 快速掃蕩<small>已手動通關</small>

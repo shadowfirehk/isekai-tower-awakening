@@ -35,7 +35,7 @@ import { BattleEngine, BattleSnapshot } from '@/lib/game/battle-engine';
 import { BattleBlessingManager } from '@/lib/game/battle-blessing-manager';
 import {
   GOLDEN_TUTORIAL_LOADOUT,
-  MapTopology,
+  BUILD_PRESETS,
   TOWER_SKILLS,
 } from '@/lib/game/battle-depth';
 import {
@@ -48,6 +48,9 @@ import { RewardService } from '@/lib/game/reward-service';
 import { getTowerById, STARTER_TOWER_ID } from '@/lib/game/towers';
 import { getBattleBranch, getBattleBranches } from '@/lib/game/battle-economy';
 import { getBattleWaypoints } from '@/lib/game/battle-readability';
+import { SLOT_LAYOUTS, towerRangeRadius } from '@/lib/game/battle-geometry';
+import { RunRewardService } from '@/lib/game/run-reward-service';
+import { recordRun, readRunHistory, balanceWarnings } from '@/lib/game/run-history';
 import {
   ENEMY_VISUAL_PROFILES,
   getBattleEnvironmentProfile,
@@ -70,44 +73,7 @@ interface BattleScreenProps {
   onUpgrade?: () => void;
 }
 
-const SLOT_LAYOUTS: Record<MapTopology, Array<{ x: number; y: number }>> = {
-  WINDING: [
-    { x: 18, y: 59 },
-    { x: 30, y: 82 },
-    { x: 43, y: 48 },
-    { x: 58, y: 43 },
-    { x: 72, y: 48 },
-    { x: 84, y: 57 },
-    { x: 54, y: 76 },
-  ],
-  MERGE: [
-    { x: 18, y: 32 },
-    { x: 18, y: 72 },
-    { x: 38, y: 53 },
-    { x: 54, y: 42 },
-    { x: 69, y: 64 },
-    { x: 84, y: 48 },
-    { x: 66, y: 25 },
-  ],
-  PARALLEL: [
-    { x: 18, y: 27 },
-    { x: 18, y: 73 },
-    { x: 40, y: 27 },
-    { x: 40, y: 73 },
-    { x: 66, y: 38 },
-    { x: 82, y: 58 },
-    { x: 60, y: 76 },
-  ],
-  CORE_SIEGE: [
-    { x: 23, y: 25 },
-    { x: 23, y: 75 },
-    { x: 47, y: 20 },
-    { x: 47, y: 80 },
-    { x: 70, y: 32 },
-    { x: 70, y: 68 },
-    { x: 87, y: 50 },
-  ],
-};
+// Geometry is shared with the combat engine so rendered range matches targeting.
 function createBattleSessionID(tierID?: EarthTierId) {
   return `earth-${tierID?.toLowerCase() ?? 'tutorial'}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
@@ -126,8 +92,9 @@ export function BattleScreen({
   onChangeLoadout,
   onUpgrade,
 }: BattleScreenProps) {
-  const dungeon = tierID ? getEarthDungeon(tierID) : EARTH_TUTORIAL_DUNGEON;
-  const loadout = tierID ? save.earthLoadout : GOLDEN_TUTORIAL_LOADOUT;
+  const [trainingLoadout,setTrainingLoadout] = useState<TowerId[]>(GOLDEN_TUTORIAL_LOADOUT);
+  const dungeon = tierID ? getEarthDungeon(tierID) : {...EARTH_TUTORIAL_DUNGEON,trainingLoadout};
+  const loadout = tierID ? save.earthLoadout : trainingLoadout;
   const [deployTowerID, setDeployTowerID] = useState<TowerId>(
     loadout[0] ?? STARTER_TOWER_ID,
   );
@@ -159,6 +126,9 @@ export function BattleScreen({
   >('native');
   const resultCommitted = useRef(false);
   const historyRecorded = useRef(false);
+  const retryCount=useRef(0);
+  const pauseForBranch=useRef(false);
+  const [historyOpen,setHistoryOpen]=useState(false);
   const sync = useCallback(() => setSnapshot(engineRef.current.snapshot()), []);
   useEffect(() => {
     let frame = 0,
@@ -173,9 +143,15 @@ export function BattleScreen({
     return () => cancelAnimationFrame(frame);
   }, []);
   useEffect(() => {
-    if (snapshot.state !== 'VICTORY' || resultCommitted.current) return;
-    resultCommitted.current = true;
+    if (!['VICTORY','DEFEAT'].includes(snapshot.state) || resultCommitted.current) return;
     const commit = window.setTimeout(() => {
+      resultCommitted.current = true;
+      if(snapshot.state === 'DEFEAT') {
+        const result=RunRewardService.partial(save,tierID,battleSessionID,snapshot.clearedWaves);
+        if(result.ok) {setRewardMaterials(result.materials);onCommitted(result.save,'已保存本場進度獎勵');}
+        else setRewardError(result.error);
+        return;
+      }
       const result = tierID
         ? EarthProgressionService.commitVictory(save, tierID, battleSessionID)
         : RewardService.commitTutorialVictory(save, battleSessionID);
@@ -197,7 +173,7 @@ export function BattleScreen({
       );
     }, 0);
     return () => window.clearTimeout(commit);
-  }, [snapshot.state, save, battleSessionID, onCommitted, tierID]);
+  }, [snapshot.state, snapshot.clearedWaves, save, battleSessionID, onCommitted, tierID]);
   useEffect(() => {
     if (
       !['VICTORY', 'DEFEAT'].includes(snapshot.state) ||
@@ -205,27 +181,7 @@ export function BattleScreen({
     )
       return;
     historyRecorded.current = true;
-    try {
-      const key = 'rng-isekai-tower-run-history',
-        history = JSON.parse(localStorage.getItem(key) ?? '[]') as unknown[],
-        entry = {
-          at: new Date().toISOString(),
-          tier: tierID ?? 'TUTORIAL',
-          wave: snapshot.wave,
-          result: snapshot.state,
-          blessings: snapshot.activeBlessings.map(
-            BattleBlessingManager.displayName.bind(BattleBlessingManager),
-          ),
-          synergies: snapshot.activeSynergies.map((s) => s.displayName),
-          metrics: snapshot.metrics,
-        };
-      localStorage.setItem(
-        key,
-        JSON.stringify([entry, ...history].slice(0, 5)),
-      );
-    } catch {
-      /* Optional local history must never block results. */
-    }
+    recordRun(battleSessionID,snapshot);
   }, [
     snapshot.state,
     snapshot.wave,
@@ -259,6 +215,8 @@ export function BattleScreen({
     if (!selected) return;
     const nextLevel = selected.battleLevel + 1;
     if (nextLevel === 3 || nextLevel === 5) {
+      pauseForBranch.current = !snapshot.paused;
+      if(pauseForBranch.current) engineRef.current.togglePause();
       setBranchChoice({ runtimeId: selected.runtimeId, level: nextLevel });
       return;
     }
@@ -272,6 +230,7 @@ export function BattleScreen({
   };
   const restart = () => {
     engineRef.current = new BattleEngine(save, dungeon);
+    engineRef.current.setRetryCount(++retryCount.current);
     resultCommitted.current = false;
     historyRecorded.current = false;
     setBattleSessionID(createBattleSessionID(tierID));
@@ -283,6 +242,7 @@ export function BattleScreen({
     setSelectedTower(null);
     setBranchChoice(null);
     setShowBuild(false);
+    setFeedback('');
     sync();
   };
   const selected =
@@ -401,10 +361,16 @@ export function BattleScreen({
           <i />
           <i />
         </div>
-        <div className="spawn-gate">
+        <svg className="tactical-route-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          {[0,1].map(branch=><polyline key={branch} points={getBattleWaypoints(snapshot.mapTopology,branch).map(p=>`${p.x},${p.y}`).join(' ')} />)}
+        </svg>
+        {snapshot.damageZones.map(zone=><div key={zone.id} className="burn-zone" style={{left:`${zone.x}%`,top:`${zone.y}%`,width:`${zone.radius*2}%`,height:`${zone.radius*2}%`}} aria-hidden="true" />)}
+        {selected && <div className="tactical-range" style={{left:`${slots[selected.slot].x}%`,top:`${slots[selected.slot].y}%`,width:`${towerRangeRadius(selected.stats.range)*2}%`,height:`${towerRangeRadius(selected.stats.range)*2}%`}} aria-hidden="true"/>}
+        <div className="spawn-gate" style={{left:`${getBattleWaypoints(snapshot.mapTopology)[0].x}%`,top:`${getBattleWaypoints(snapshot.mapTopology)[0].y}%`}}>
           <span>SPAWN</span>
         </div>
-        <div className="core-gate">
+        <div className="spawn-gate second-spawn" style={{left:`${getBattleWaypoints(snapshot.mapTopology,1)[0].x}%`,top:`${getBattleWaypoints(snapshot.mapTopology,1)[0].y}%`}}><span>SPAWN 2</span></div>
+        <div className="core-gate" style={{left:`${getBattleWaypoints(snapshot.mapTopology).at(-1)!.x}%`,top:`${getBattleWaypoints(snapshot.mapTopology).at(-1)!.y}%`,right:'auto'}}>
           <Shield />
           <span>CORE</span>
         </div>
@@ -746,6 +712,15 @@ export function BattleScreen({
         )}
       </div>
       <aside className="deployment-panel tactical-panel">
+        {!tierID && snapshot.deployed.length===0 && ['SETUP','READY'].includes(snapshot.state) && <div className="training-build-picker">
+          <h3>黃金試煉 · 選擇 3 種借用炮台</h3>
+          <p>每種可重複部署，最多 7 座；借用炮台只在本場生效。</p>
+          {BUILD_PRESETS.map(preset=><button key={preset.name} title={preset.hint} className={preset.towers.join()===trainingLoadout.join()?'active':''} onClick={()=>{
+            setTrainingLoadout([...preset.towers]);setDeployTowerID(preset.towers[0]);
+            engineRef.current=new BattleEngine(save,{...EARTH_TUTORIAL_DUNGEON,trainingLoadout:preset.towers});
+            engineRef.current.setRetryCount(retryCount.current);sync();
+          }}>{preset.name}<small>{preset.hint}</small></button>)}
+        </div>}
         <p>
           <TowerControl />
           DEPLOYMENT · {snapshot.deployed.length} / {snapshot.slotCapacity}
@@ -1087,7 +1062,7 @@ export function BattleScreen({
                 <h2>{getTowerById(branchTower.towerId)?.name} 戰鬥進化</h2>
                 <p>本次選擇只在這場戰鬥生效，重新挑戰後會重置。</p>
               </span>
-              <button onClick={() => setBranchChoice(null)}>×</button>
+              <button aria-label="取消分支選擇" onClick={() => {setBranchChoice(null);if(pauseForBranch.current) engineRef.current.togglePause();sync();}}>×</button>
             </header>
             <div>
               {branchOptions.map((option, index) => (
@@ -1102,6 +1077,8 @@ export function BattleScreen({
                     sync();
                     if (result.ok) {
                       setBranchChoice(null);
+                      if(pauseForBranch.current) engineRef.current.togglePause();
+                      sync();
                       setFeedback(
                         `${option.displayName} · Battle Lv.${result.battleLevel} · -${result.spent} Gold`,
                       );
@@ -1325,7 +1302,9 @@ export function BattleScreen({
                 </span>
               </section>
             )}
-            {snapshot.state === 'VICTORY' && rewardMaterials.length > 0 && (
+            {rewardError && <p role="alert">{rewardError} <button onClick={()=>{resultCommitted.current=false;setRewardError(''); const result=snapshot.state==='DEFEAT'?RunRewardService.partial(save,tierID,battleSessionID,snapshot.clearedWaves):tierID?EarthProgressionService.commitVictory(save,tierID,battleSessionID):RewardService.commitTutorialVictory(save,battleSessionID);if(result.ok){onCommitted(result.save);setRewardMaterials('materials' in result?result.materials:result.reward.materials);resultCommitted.current=true;}else setRewardError(String('message' in result?result.message:result.error));}}>重試保存</button></p>}
+            {snapshot.state==='DEFEAT' && <p>已完成 {snapshot.clearedWaves} 波 · 階段素材可保留，下一階仍須完整通關。</p>}
+            {rewardMaterials.length > 0 && (
               <div className="reward-list">
                 {rewardMaterials.map((reward, index) => (
                   <span key={`${reward.materialID}-${index}`}>
@@ -1339,8 +1318,10 @@ export function BattleScreen({
             <section className="result-build-summary">
               <header>
                 <BrainCircuit />
-                RUN BUILD
+              RUN BUILD
               </header>
+              <p>本場最高投資：{getTowerById([...snapshot.metrics.towersUsed].sort((a,b)=>b.investedGold-a.investedGold)[0]?.towerId)?.name ?? '尚未建造'}</p>
+              <div className="run-tower-list">{snapshot.metrics.towersUsed.map((tower,index)=><span key={index}><b>{getTowerById(tower.towerId)?.name} · Lv.{tower.level}{tower.sold?'（已出售）':''}</b><small>{tower.branches.map(id=>getBattleBranch(tower.towerId,id)?.displayName).join(' / ')||'基礎型'} · 投資 {tower.investedGold} Gold</small></span>)}</div>
               <div>
                 <span>
                   <small>BLESSINGS</small>
@@ -1404,7 +1385,7 @@ export function BattleScreen({
                 <RotateCcw />
                 QUICK RETRY
               </button>
-              <button onClick={onChangeLoadout ?? onBack}>
+              <button onClick={tierID ? onChangeLoadout ?? onBack : restart}>
                 <TowerControl />
                 CHANGE LOADOUT
               </button>
@@ -1417,6 +1398,9 @@ export function BattleScreen({
                 返回
               </button>
             </div>
+            <p className="next-run-hint">再試一次：換一個 Lv.3／Lv.5 分支，或改變新建與升級的金幣分配。</p>
+            <button onClick={()=>setHistoryOpen(!historyOpen)}>最近戰局與使用率分析</button>
+            {historyOpen && <section className="run-history">{readRunHistory().slice(0,5).map(run=><p key={run.id}>{run.result==='VICTORY'?'通關':'失敗'} · {run.wave} 波 · {formatTime(run.metrics.runDuration)} · 金幣 {run.metrics.goldEarned} / {run.metrics.goldSpent} · 平均 {run.metrics.averageTowerCount.toFixed(1)} 座</p>)}{balanceWarnings(readRunHistory()).map(warning=><small key={warning}>{warning}</small>)}</section>}
           </div>
         </div>
       )}

@@ -189,6 +189,19 @@ export const GOLDEN_TUTORIAL_LOADOUT: TowerId[] = [
   'EARTH_ARMOR_PIERCING_TURRET',
   'EARTH_BLAST_TURRET',
 ];
+export const BUILD_PRESETS: {name:string;hint:string;towers:TowerId[]}[] = [
+  {name:'混合防線',hint:'連射清漏怪、穿甲抓弱點、爆裂守交會點',towers:GOLDEN_TUTORIAL_LOADOUT},
+  {name:'疾雷流',hint:'追擊感電目標，快速回收技能與超載能量',towers:['EARTH_RAPID_FIRE_TURRET','EARTH_THUNDER_TURRET','EARTH_BASIC_AUTO_TURRET']},
+  {name:'破甲殲滅流',hint:'沿長直線設防，保留爆發給六秒弱點窗',towers:['EARTH_ARMOR_PIERCING_TURRET','EARTH_EMPEROR_ANNIHILATION_TURRET','EARTH_BASIC_AUTO_TURRET']},
+  {name:'爆裂暴擊流',hint:'在敵群匯合處引發暴擊與二次爆炸',towers:['EARTH_BLAST_TURRET','EARTH_PHANTOM_TURRET','EARTH_BASIC_AUTO_TURRET']},
+  {name:'聖域壁壘流',hint:'王權與聖域鄰近部署，建立保護基地的陣形',towers:['EARTH_KING_AUTHORITY_TURRET','EARTH_SAINT_DOMAIN_TURRET','EARTH_BASIC_AUTO_TURRET']},
+];
+export const GOLDEN_BLESSING_IDS = [
+  'B_POWER_MATRIX','B_PRECISION','B_BOSS_HUNTER','B_RAPID_SUPPLY',
+  'B_OVERHEAT','B_CHAIN_SPREAD','B_ARMOR_CORE','B_OPEN_PLATES',
+  'B_HEAVY_CALIBER','B_BLAST_AMP','B_CHAIN_REACTION','B_FORTRESS',
+  'B_BOUNTY_HUNTER','B_EFFICIENT_BUILD','B_TACTICAL_INVESTMENT',
+];
 
 export type BlessingRarity = 'COMMON' | 'RARE' | 'EPIC';
 export type BlessingClass = 'BUILD_SUPPORT' | 'GENERAL_POWER' | 'TRANSFORMER';

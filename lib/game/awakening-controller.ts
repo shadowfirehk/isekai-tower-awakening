@@ -30,7 +30,7 @@ export const AwakeningController = {
     const persisted = SaveManager.save({
       ...rewarded,
       awakeningRevealAcknowledged: true,
-      preparationDay: Math.max(1, rewarded.preparationDay),
+      preparationDay: rewarded.preparationDay,
       currentGameState: GameState.Preparation,
     });
     if (!persisted.ok) return persisted;

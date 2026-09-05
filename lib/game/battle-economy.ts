@@ -3,6 +3,8 @@ import { TowerId } from './types';
 export type BattleBranchTier = 3 | 5;
 export type BattleBranchEffect =
   | 'FOCUS_RAMP'
+  | 'SPEED_RAMP'
+  | 'IGNORE_DEFENSE'
   | 'SECOND_TARGET'
   | 'DOUBLE_SHOT_5'
   | 'PIERCE_PRESERVE'
@@ -27,6 +29,7 @@ export interface BattleUpgradeModifiers {
   critDamagePercent?: number;
   maxTargets?: number;
   aoeDamagePercent?: number;
+  radiusPercent?: number;
   bossDamagePercent?: number;
   executeDamagePercent?: number;
   cooldownReduction?: number;
@@ -91,10 +94,10 @@ const DATA: Record<
       [
         '集中火力',
         '持續鎖定時提升傷害。',
-        { attackPercent: 0.24 },
+        {},
         'FOCUS_RAMP',
       ],
-      ['自動掃射', '週期性取得第二目標。', { maxTargets: 1 }, 'SECOND_TARGET'],
+      ['自動掃射', '每第 4 發掃射附近第二目標。', {}, 'SECOND_TARGET'],
     ],
   },
   EARTH_RAPID_FIRE_TURRET: {
@@ -110,10 +113,11 @@ const DATA: Record<
     level5: [
       [
         '極速領域',
-        '攻速與技能循環進一步強化。',
-        { attackSpeedPercent: 0.28, cooldownReduction: 0.08 },
+        '連續攻擊同一目標，每秒攻速 +8%，最多 +48%；換目標重置。',
+        {},
+        'SPEED_RAMP',
       ],
-      ['彈幕壓制', '攻擊可命中第二目標。', { maxTargets: 1 }, 'SECOND_TARGET'],
+      ['彈幕壓制', '每發有 30% 機率命中附近第二目標。', {}, 'SECOND_TARGET'],
     ],
   },
   EARTH_ARMOR_PIERCING_TURRET: {
@@ -128,8 +132,9 @@ const DATA: Record<
     level5: [
       [
         '完全貫穿',
-        '強化對重甲與頭目傷害。',
-        { penetration: 180, bossDamagePercent: 0.18 },
+        '貫穿後再無視 45% 剩餘防禦。',
+        {},
+        'IGNORE_DEFENSE',
       ],
       [
         '貫穿連殺',
@@ -142,7 +147,7 @@ const DATA: Record<
   EARTH_BLAST_TURRET: {
     level3: [
       ['高爆核心', '爆炸傷害 +25%。', { aoeDamagePercent: 0.25 }],
-      ['廣域彈頭', '爆炸範圍與目標數提升。', { maxTargets: 2 }],
+      ['廣域彈頭', '爆炸半徑 +30%，目標數 +2。', { maxTargets: 2, radiusPercent: 0.3 }],
     ],
     level5: [
       [

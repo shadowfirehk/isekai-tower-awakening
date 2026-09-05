@@ -127,7 +127,7 @@ function normalizeSave(input: Partial<PlayerSave>): PlayerSave {
   const awakeningCompleted = Boolean(input.awakeningCompleted || earthCareer);
   const acknowledged = Boolean(input.awakeningRevealAcknowledged);
   const preparationDay = earthCareer
-    ? Math.min(5, Math.max(acknowledged ? 1 : 0, Math.floor(Number(input.preparationDay ?? 0))))
+    ? Math.min(5, Math.max(0, Math.floor(Number(input.preparationDay ?? 0))))
     : 0;
   const now = base.saveCreatedAt;
   let ownedTowers = normalizeOwnedTowers(raw, now);
