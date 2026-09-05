@@ -1,0 +1,2285 @@
+{
+  "date": "2026-09-05T11:59:27.169Z",
+  "checks": [
+    "Independent v8 save, valid 3-type loadout, bounded permanent progression",
+    "Chronology, battle roster, field orders and routes",
+    "Budget, sell once, occupied/fractional slot and engineer-only start",
+    "Engineer adjacency affects costs and invalid branch does not spend resources",
+    "Pause and 2x preserve continuous simulation",
+    "No-cost idle defense fails and gives no first-clear reward"
+  ],
+  "method": "27 deterministic engine runs with level 1 / Mk.I saves; automated tactical policy. No player data, cheats or injected resources.",
+  "runs": [
+    {
+      "loadout": [
+        "MG",
+        "ARTILLERY",
+        "ENGINEER"
+      ],
+      "strategy": "wide",
+      "seed": 11,
+      "doctrine": "DEFENSE",
+      "id": "MG-ARTILLERY-ENGINEER-wide-11-DEFENSE",
+      "at": "2026-09-05T11:59:25.821Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 1047.3499999995952,
+      "earned": 5801,
+      "spent": 2750,
+      "units": [
+        "機槍陣地 · 陣地 3 · 強化陣地",
+        "野戰炮 · 陣地 3 · 精準校射",
+        "工兵陣地 · 陣地 3 · 工事加固",
+        "機槍陣地 · 陣地 3 · 強化陣地",
+        "野戰炮 · 陣地 3 · 精準校射",
+        "機槍陣地 · 陣地 3 · 強化陣地",
+        "野戰炮 · 陣地 3 · 精準校射"
+      ],
+      "orders": [
+        "BARRAGE",
+        "TIMING",
+        "COUNTER",
+        "RISK"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 235,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 6122.204799999973,
+          "branches": [
+            "MG_B3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 56314.2080000001,
+          "branches": [
+            "ARTILLERY_B3"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_B3"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 29417.06519999996,
+          "branches": [
+            "MG_B3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 2400.887,
+          "branches": [
+            "ARTILLERY_B3"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "MG_B3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "ARTILLERY_B3"
+          ]
+        }
+      ],
+      "purchaseInterval": 26.544444444448896
+    },
+    {
+      "loadout": [
+        "MG",
+        "ARTILLERY",
+        "ENGINEER"
+      ],
+      "strategy": "wide",
+      "seed": 24,
+      "doctrine": "DEFENSE",
+      "id": "MG-ARTILLERY-ENGINEER-wide-24-DEFENSE",
+      "at": "2026-09-05T11:59:25.917Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 1001.8999999996365,
+      "earned": 5801,
+      "spent": 2750,
+      "units": [
+        "機槍陣地 · 陣地 3 · 加強供彈",
+        "野戰炮 · 陣地 3 · 高爆彈",
+        "工兵陣地 · 陣地 3 · 工程協調",
+        "野戰炮 · 陣地 3 · 高爆彈",
+        "機槍陣地 · 陣地 3 · 加強供彈",
+        "野戰炮 · 陣地 3 · 高爆彈",
+        "機槍陣地 · 陣地 3 · 加強供彈"
+      ],
+      "orders": [
+        "FIRE",
+        "BELTS",
+        "ENGINEERS",
+        "SPOTTERS"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 245,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 8818.560000000025,
+          "branches": [
+            "MG_A3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 50032.30900000022,
+          "branches": [
+            "ARTILLERY_A3"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_A3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 35343.433000000055,
+          "branches": [
+            "ARTILLERY_A3"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "MG_A3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 60.063000000000045,
+          "branches": [
+            "ARTILLERY_A3"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "MG_A3"
+          ]
+        }
+      ],
+      "purchaseInterval": 25.2388888888932
+    },
+    {
+      "loadout": [
+        "MG",
+        "ARTILLERY",
+        "ENGINEER"
+      ],
+      "strategy": "tall",
+      "seed": 11,
+      "doctrine": "DEFENSE",
+      "id": "MG-ARTILLERY-ENGINEER-tall-11-DEFENSE",
+      "at": "2026-09-05T11:59:25.970Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 1005.0999999996336,
+      "earned": 5881,
+      "spent": 3720,
+      "units": [
+        "機槍陣地 · 陣地 5 · 強化陣地 / 交叉火力",
+        "野戰炮 · 陣地 5 · 精準校射 / 重型彈藥",
+        "工兵陣地 · 陣地 5 · 工事加固 / 建造效率",
+        "機槍陣地 · 陣地 5 · 強化陣地 / 交叉火力"
+      ],
+      "orders": [
+        "BARRAGE",
+        "TIMING",
+        "COUNTER",
+        "RISK"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 194,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 4578.570499999988,
+          "branches": [
+            "MG_B3",
+            "MG_B5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 59658.20047499994,
+          "branches": [
+            "ARTILLERY_B3",
+            "ARTILLERY_B5"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_B3",
+            "ENGINEER_B5"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 30017.59402499977,
+          "branches": [
+            "MG_B3",
+            "MG_B5"
+          ]
+        }
+      ],
+      "purchaseInterval": 36.41176470587951
+    },
+    {
+      "loadout": [
+        "MG",
+        "ARTILLERY",
+        "ENGINEER"
+      ],
+      "strategy": "tall",
+      "seed": 24,
+      "doctrine": "DEFENSE",
+      "id": "MG-ARTILLERY-ENGINEER-tall-24-DEFENSE",
+      "at": "2026-09-05T11:59:26.030Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 963.7999999996712,
+      "earned": 5801,
+      "spent": 3780,
+      "units": [
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊",
+        "工兵陣地 · 陣地 5 · 工程協調 / 修復網絡",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊"
+      ],
+      "orders": [
+        "FIRE",
+        "BELTS",
+        "ENGINEERS",
+        "SPOTTERS"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 214,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 6228.330199999957,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 48384.17099999985,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_A3",
+            "ENGINEER_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 39641.8637999999,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        }
+      ],
+      "purchaseInterval": 35.52058823529201
+    },
+    {
+      "loadout": [
+        "MG",
+        "ARTILLERY",
+        "ENGINEER"
+      ],
+      "strategy": "hybrid",
+      "seed": 11,
+      "doctrine": "DEFENSE",
+      "id": "MG-ARTILLERY-ENGINEER-hybrid-11-DEFENSE",
+      "at": "2026-09-05T11:59:26.101Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 1014.2999999996252,
+      "earned": 5857,
+      "spent": 4700,
+      "units": [
+        "機槍陣地 · 陣地 5 · 強化陣地 / 交叉火力",
+        "野戰炮 · 陣地 5 · 精準校射 / 重型彈藥",
+        "工兵陣地 · 陣地 5 · 工事加固 / 建造效率",
+        "機槍陣地 · 陣地 5 · 強化陣地 / 交叉火力",
+        "野戰炮 · 陣地 5 · 精準校射 / 重型彈藥"
+      ],
+      "orders": [
+        "BARRAGE",
+        "TIMING",
+        "COUNTER",
+        "RISK"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 194,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 5013.94399999998,
+          "branches": [
+            "MG_B3",
+            "MG_B5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 58982.81587499991,
+          "branches": [
+            "ARTILLERY_B3",
+            "ARTILLERY_B5"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_B3",
+            "ENGINEER_B5"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 29525.609874999725,
+          "branches": [
+            "MG_B3",
+            "MG_B5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 731.9952500000003,
+          "branches": [
+            "ARTILLERY_B3",
+            "ARTILLERY_B5"
+          ]
+        }
+      ],
+      "purchaseInterval": 35.12272727271872
+    },
+    {
+      "loadout": [
+        "MG",
+        "ARTILLERY",
+        "ENGINEER"
+      ],
+      "strategy": "hybrid",
+      "seed": 24,
+      "doctrine": "DEFENSE",
+      "id": "MG-ARTILLERY-ENGINEER-hybrid-24-DEFENSE",
+      "at": "2026-09-05T11:59:26.143Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 972.6499999996631,
+      "earned": 5801,
+      "spent": 4700,
+      "units": [
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊",
+        "工兵陣地 · 陣地 5 · 工程協調 / 修復網絡",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊",
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊"
+      ],
+      "orders": [
+        "FIRE",
+        "BELTS",
+        "ENGINEERS",
+        "SPOTTERS"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 209,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 6755.704999999942,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 48150.5809999999,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_A3",
+            "ENGINEER_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 39348.078999999896,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        }
+      ],
+      "purchaseInterval": 33.78409090908352
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "ARTILLERY",
+        "ENGINEER"
+      ],
+      "strategy": "wide",
+      "seed": 11,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-ARTILLERY-ENGINEER-wide-11-DEFENSE",
+      "at": "2026-09-05T11:59:26.207Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 1062.7499999995812,
+      "earned": 5801,
+      "spent": 2690,
+      "units": [
+        "步槍陣地 · 陣地 3 · 熟練裝填",
+        "野戰炮 · 陣地 3 · 精準校射",
+        "工兵陣地 · 陣地 3 · 工事加固",
+        "步槍陣地 · 陣地 3 · 熟練裝填",
+        "野戰炮 · 陣地 3 · 精準校射",
+        "步槍陣地 · 陣地 3 · 熟練裝填",
+        "野戰炮 · 陣地 3 · 精準校射"
+      ],
+      "orders": [
+        "BARRAGE",
+        "TIMING",
+        "COUNTER",
+        "RISK"
+      ],
+      "commands": 6,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 260,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "RIFLE",
+          "level": 3,
+          "damage": 6963.733,
+          "branches": [
+            "RIFLE_B3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 58143.69880000009,
+          "branches": [
+            "ARTILLERY_B3"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_B3"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 3,
+          "damage": 23841.241199999997,
+          "branches": [
+            "RIFLE_B3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 5305.692000000002,
+          "branches": [
+            "ARTILLERY_B3"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "RIFLE_B3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "ARTILLERY_B3"
+          ]
+        }
+      ],
+      "purchaseInterval": 26.22500000000447
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "ARTILLERY",
+        "ENGINEER"
+      ],
+      "strategy": "wide",
+      "seed": 24,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-ARTILLERY-ENGINEER-wide-24-DEFENSE",
+      "at": "2026-09-05T11:59:26.255Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 983.5999999996532,
+      "earned": 5801,
+      "spent": 2690,
+      "units": [
+        "步槍陣地 · 陣地 3 · 精準瞄具",
+        "野戰炮 · 陣地 3 · 高爆彈",
+        "工兵陣地 · 陣地 3 · 工程協調",
+        "野戰炮 · 陣地 3 · 高爆彈",
+        "步槍陣地 · 陣地 3 · 精準瞄具",
+        "野戰炮 · 陣地 3 · 高爆彈",
+        "步槍陣地 · 陣地 3 · 精準瞄具"
+      ],
+      "orders": [
+        "FIRE",
+        "SIGHTS",
+        "ENGINEERS",
+        "SPOTTERS"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 262,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "RIFLE",
+          "level": 3,
+          "damage": 11304.742499999997,
+          "branches": [
+            "RIFLE_A3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 49645.4760000002,
+          "branches": [
+            "ARTILLERY_A3"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_A3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 33304.146500000024,
+          "branches": [
+            "ARTILLERY_A3"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "RIFLE_A3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "ARTILLERY_A3"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "RIFLE_A3"
+          ]
+        }
+      ],
+      "purchaseInterval": 24.511111111115206
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "ARTILLERY",
+        "ENGINEER"
+      ],
+      "strategy": "tall",
+      "seed": 11,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-ARTILLERY-ENGINEER-tall-11-DEFENSE",
+      "at": "2026-09-05T11:59:26.295Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 1000.3999999996379,
+      "earned": 5881,
+      "spent": 3680,
+      "units": [
+        "步槍陣地 · 陣地 5 · 熟練裝填 / 延伸防線",
+        "野戰炮 · 陣地 5 · 精準校射 / 重型彈藥",
+        "工兵陣地 · 陣地 5 · 工事加固 / 建造效率",
+        "步槍陣地 · 陣地 5 · 熟練裝填 / 延伸防線"
+      ],
+      "orders": [
+        "BARRAGE",
+        "TIMING",
+        "COUNTER",
+        "RISK"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 191,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "RIFLE",
+          "level": 5,
+          "damage": 9481.819999999998,
+          "branches": [
+            "RIFLE_B3",
+            "RIFLE_B5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 58057.82149999993,
+          "branches": [
+            "ARTILLERY_B3",
+            "ARTILLERY_B5"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_B3",
+            "ENGINEER_B5"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 5,
+          "damage": 26714.72349999999,
+          "branches": [
+            "RIFLE_B3",
+            "RIFLE_B5"
+          ]
+        }
+      ],
+      "purchaseInterval": 35.8705882352919
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "ARTILLERY",
+        "ENGINEER"
+      ],
+      "strategy": "tall",
+      "seed": 24,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-ARTILLERY-ENGINEER-tall-24-DEFENSE",
+      "at": "2026-09-05T11:59:26.329Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 942.2999999996907,
+      "earned": 5801,
+      "spent": 3760,
+      "units": [
+        "步槍陣地 · 陣地 5 · 精準瞄具 / 集中齊射",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊",
+        "工兵陣地 · 陣地 5 · 工程協調 / 修復網絡",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊"
+      ],
+      "orders": [
+        "FIRE",
+        "SIGHTS",
+        "ENGINEERS",
+        "SPOTTERS"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 179,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "RIFLE",
+          "level": 5,
+          "damage": 8995.009000000002,
+          "branches": [
+            "RIFLE_A3",
+            "RIFLE_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 47859.89454999986,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_A3",
+            "ENGINEER_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 37399.46144999992,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        }
+      ],
+      "purchaseInterval": 34.88235294117511
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "ARTILLERY",
+        "ENGINEER"
+      ],
+      "strategy": "hybrid",
+      "seed": 11,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-ARTILLERY-ENGINEER-hybrid-11-DEFENSE",
+      "at": "2026-09-05T11:59:26.376Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 1015.7499999996239,
+      "earned": 5857,
+      "spent": 4660,
+      "units": [
+        "步槍陣地 · 陣地 5 · 熟練裝填 / 延伸防線",
+        "野戰炮 · 陣地 5 · 精準校射 / 重型彈藥",
+        "工兵陣地 · 陣地 5 · 工事加固 / 建造效率",
+        "步槍陣地 · 陣地 5 · 熟練裝填 / 延伸防線",
+        "野戰炮 · 陣地 5 · 精準校射 / 重型彈藥"
+      ],
+      "orders": [
+        "BARRAGE",
+        "TIMING",
+        "COUNTER",
+        "RISK"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 218,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "RIFLE",
+          "level": 5,
+          "damage": 8993.949999999997,
+          "branches": [
+            "RIFLE_B3",
+            "RIFLE_B5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 57823.81929999992,
+          "branches": [
+            "ARTILLERY_B3",
+            "ARTILLERY_B5"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_B3",
+            "ENGINEER_B5"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 5,
+          "damage": 25976.73869999999,
+          "branches": [
+            "RIFLE_B3",
+            "RIFLE_B5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 1459.8570000000002,
+          "branches": [
+            "ARTILLERY_B3",
+            "ARTILLERY_B5"
+          ]
+        }
+      ],
+      "purchaseInterval": 35.120454545446094
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "ARTILLERY",
+        "ENGINEER"
+      ],
+      "strategy": "hybrid",
+      "seed": 24,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-ARTILLERY-ENGINEER-hybrid-24-DEFENSE",
+      "at": "2026-09-05T11:59:26.413Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 952.7999999996812,
+      "earned": 5801,
+      "spent": 4660,
+      "units": [
+        "步槍陣地 · 陣地 5 · 精準瞄具 / 集中齊射",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊",
+        "工兵陣地 · 陣地 5 · 工程協調 / 修復網絡",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊",
+        "步槍陣地 · 陣地 5 · 精準瞄具 / 集中齊射"
+      ],
+      "orders": [
+        "FIRE",
+        "SIGHTS",
+        "ENGINEERS",
+        "SPOTTERS"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 179,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "RIFLE",
+          "level": 5,
+          "damage": 9773.326174999998,
+          "branches": [
+            "RIFLE_A3",
+            "RIFLE_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 50247.780299999846,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_A3",
+            "ENGINEER_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 34233.25852499995,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "RIFLE_A3",
+            "RIFLE_A5"
+          ]
+        }
+      ],
+      "purchaseInterval": 32.69999999999372
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "MG",
+        "ENGINEER"
+      ],
+      "strategy": "wide",
+      "seed": 11,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-MG-ENGINEER-wide-11-DEFENSE",
+      "at": "2026-09-05T11:59:26.490Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 1199.8999999994564,
+      "earned": 5801,
+      "spent": 2530,
+      "units": [
+        "機槍陣地 · 陣地 3 · 強化陣地",
+        "機槍陣地 · 陣地 3 · 強化陣地",
+        "工兵陣地 · 陣地 3 · 工事加固",
+        "步槍陣地 · 陣地 3 · 熟練裝填",
+        "機槍陣地 · 陣地 3 · 強化陣地",
+        "步槍陣地 · 陣地 3 · 熟練裝填",
+        "機槍陣地 · 陣地 3 · 強化陣地"
+      ],
+      "orders": [
+        "BARRAGE",
+        "TIMING",
+        "COUNTER",
+        "RISK"
+      ],
+      "commands": 6,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 321,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 24228.153200000146,
+          "branches": [
+            "MG_B3"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 39641.5288000002,
+          "branches": [
+            "MG_B3"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_B3"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 3,
+          "damage": 30301.042999999998,
+          "branches": [
+            "RIFLE_B3"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 83.63999999999999,
+          "branches": [
+            "MG_B3"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "RIFLE_B3"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "MG_B3"
+          ]
+        }
+      ],
+      "purchaseInterval": 27.936111111115217
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "MG",
+        "ENGINEER"
+      ],
+      "strategy": "wide",
+      "seed": 24,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-MG-ENGINEER-wide-24-DEFENSE",
+      "at": "2026-09-05T11:59:26.556Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 1141.5499999995095,
+      "earned": 5801,
+      "spent": 2530,
+      "units": [
+        "機槍陣地 · 陣地 3 · 加強供彈",
+        "機槍陣地 · 陣地 3 · 加強供彈",
+        "工兵陣地 · 陣地 3 · 工程協調",
+        "機槍陣地 · 陣地 3 · 加強供彈",
+        "步槍陣地 · 陣地 3 · 精準瞄具",
+        "機槍陣地 · 陣地 3 · 加強供彈",
+        "步槍陣地 · 陣地 3 · 精準瞄具"
+      ],
+      "orders": [
+        "BELTS",
+        "SIGHTS",
+        "ENGINEERS",
+        "SPOTTERS"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 316,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 16478.269999999837,
+          "branches": [
+            "MG_A3"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 39522.70500000123,
+          "branches": [
+            "MG_A3"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_A3"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 38052.93000000122,
+          "branches": [
+            "MG_A3"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 3,
+          "damage": 200.4599999999988,
+          "branches": [
+            "RIFLE_A3"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "MG_A3"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "RIFLE_A3"
+          ]
+        }
+      ],
+      "purchaseInterval": 25.952777777781996
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "MG",
+        "ENGINEER"
+      ],
+      "strategy": "tall",
+      "seed": 11,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-MG-ENGINEER-tall-11-DEFENSE",
+      "at": "2026-09-05T11:59:26.599Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 1039.5499999996023,
+      "earned": 5881,
+      "spent": 3640,
+      "units": [
+        "機槍陣地 · 陣地 5 · 強化陣地 / 交叉火力",
+        "機槍陣地 · 陣地 5 · 強化陣地 / 交叉火力",
+        "工兵陣地 · 陣地 5 · 工事加固 / 建造效率",
+        "步槍陣地 · 陣地 5 · 熟練裝填 / 延伸防線"
+      ],
+      "orders": [
+        "BARRAGE",
+        "TIMING",
+        "COUNTER",
+        "RISK"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 303,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 16209.469649999925,
+          "branches": [
+            "MG_B3",
+            "MG_B5"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 44116.499000000054,
+          "branches": [
+            "MG_B3",
+            "MG_B5"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_B3",
+            "ENGINEER_B5"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 5,
+          "damage": 33928.39635000001,
+          "branches": [
+            "RIFLE_B3",
+            "RIFLE_B5"
+          ]
+        }
+      ],
+      "purchaseInterval": 37.95882352940849
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "MG",
+        "ENGINEER"
+      ],
+      "strategy": "tall",
+      "seed": 24,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-MG-ENGINEER-tall-24-DEFENSE",
+      "at": "2026-09-05T11:59:26.643Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 1046.349999999596,
+      "earned": 5801,
+      "spent": 3660,
+      "units": [
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊",
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊",
+        "工兵陣地 · 陣地 5 · 工程協調 / 修復網絡",
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊"
+      ],
+      "orders": [
+        "BELTS",
+        "SIGHTS",
+        "ENGINEERS",
+        "SPOTTERS"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 301,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 11671.355000000009,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 43064.64000000026,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_A3",
+            "ENGINEER_A5"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 39518.36999999997,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        }
+      ],
+      "purchaseInterval": 36.72647058823314
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "MG",
+        "ENGINEER"
+      ],
+      "strategy": "hybrid",
+      "seed": 11,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-MG-ENGINEER-hybrid-11-DEFENSE",
+      "at": "2026-09-05T11:59:26.693Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 1086.9499999995592,
+      "earned": 5865,
+      "spent": 4560,
+      "units": [
+        "機槍陣地 · 陣地 5 · 強化陣地 / 交叉火力",
+        "機槍陣地 · 陣地 5 · 強化陣地 / 交叉火力",
+        "工兵陣地 · 陣地 5 · 工事加固 / 建造效率",
+        "步槍陣地 · 陣地 5 · 熟練裝填 / 延伸防線",
+        "機槍陣地 · 陣地 5 · 強化陣地 / 交叉火力"
+      ],
+      "orders": [
+        "BARRAGE",
+        "TIMING",
+        "COUNTER",
+        "RISK"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 303,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 17598.358749999934,
+          "branches": [
+            "MG_B3",
+            "MG_B5"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 43136.73399999998,
+          "branches": [
+            "MG_B3",
+            "MG_B5"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_B3",
+            "ENGINEER_B5"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 5,
+          "damage": 33519.27225,
+          "branches": [
+            "RIFLE_B3",
+            "RIFLE_B5"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "MG_B3",
+            "MG_B5"
+          ]
+        }
+      ],
+      "purchaseInterval": 38.0909090908986
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "MG",
+        "ENGINEER"
+      ],
+      "strategy": "hybrid",
+      "seed": 24,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-MG-ENGINEER-hybrid-24-DEFENSE",
+      "at": "2026-09-05T11:59:26.744Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 1070.1999999995744,
+      "earned": 5801,
+      "spent": 4560,
+      "units": [
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊",
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊",
+        "工兵陣地 · 陣地 5 · 工程協調 / 修復網絡",
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊",
+        "步槍陣地 · 陣地 5 · 精準瞄具 / 集中齊射"
+      ],
+      "orders": [
+        "BELTS",
+        "SIGHTS",
+        "ENGINEERS",
+        "SPOTTERS"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 304,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 12444.135000000028,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 42420.18000000067,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_A3",
+            "ENGINEER_A5"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 39390.05000000054,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "RIFLE_A3",
+            "RIFLE_A5"
+          ]
+        }
+      ],
+      "purchaseInterval": 36.129545454536746
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "MG",
+        "ARTILLERY"
+      ],
+      "strategy": "wide",
+      "seed": 11,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-MG-ARTILLERY-wide-11-DEFENSE",
+      "at": "2026-09-05T11:59:26.791Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 965.04999999967,
+      "earned": 5801,
+      "spent": 2750,
+      "units": [
+        "機槍陣地 · 陣地 3 · 強化陣地",
+        "野戰炮 · 陣地 3 · 精準校射",
+        "機槍陣地 · 陣地 3 · 強化陣地",
+        "野戰炮 · 陣地 3 · 精準校射",
+        "步槍陣地 · 陣地 3 · 熟練裝填",
+        "機槍陣地 · 陣地 3 · 強化陣地",
+        "野戰炮 · 陣地 3 · 精準校射"
+      ],
+      "orders": [
+        "BARRAGE",
+        "TIMING",
+        "COUNTER",
+        "RISK"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 216,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 3340.4389999999976,
+          "branches": [
+            "MG_B3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 46858.84599999998,
+          "branches": [
+            "ARTILLERY_B3"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 27468.79700000001,
+          "branches": [
+            "MG_B3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 16586.282999999985,
+          "branches": [
+            "ARTILLERY_B3"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "RIFLE_B3"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "MG_B3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "ARTILLERY_B3"
+          ]
+        }
+      ],
+      "purchaseInterval": 24.591666666670807
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "MG",
+        "ARTILLERY"
+      ],
+      "strategy": "wide",
+      "seed": 24,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-MG-ARTILLERY-wide-24-DEFENSE",
+      "at": "2026-09-05T11:59:26.837Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 979.1999999996572,
+      "earned": 5801,
+      "spent": 2730,
+      "units": [
+        "機槍陣地 · 陣地 3 · 加強供彈",
+        "野戰炮 · 陣地 3 · 高爆彈",
+        "野戰炮 · 陣地 3 · 高爆彈",
+        "步槍陣地 · 陣地 3 · 精準瞄具",
+        "機槍陣地 · 陣地 3 · 加強供彈",
+        "野戰炮 · 陣地 3 · 高爆彈",
+        "步槍陣地 · 陣地 3 · 精準瞄具"
+      ],
+      "orders": [
+        "FIRE",
+        "BELTS",
+        "SIGHTS",
+        "SPOTTERS"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 222,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 8180.09500000003,
+          "branches": [
+            "MG_A3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 48396.208000000195,
+          "branches": [
+            "ARTILLERY_A3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 35306.34800000008,
+          "branches": [
+            "ARTILLERY_A3"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 3,
+          "damage": 2371.714,
+          "branches": [
+            "RIFLE_A3"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "MG_A3"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "ARTILLERY_A3"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 3,
+          "damage": 0,
+          "branches": [
+            "RIFLE_A3"
+          ]
+        }
+      ],
+      "purchaseInterval": 24.511111111115255
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "MG",
+        "ARTILLERY"
+      ],
+      "strategy": "tall",
+      "seed": 11,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-MG-ARTILLERY-tall-11-DEFENSE",
+      "at": "2026-09-05T11:59:26.873Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 948.3999999996852,
+      "earned": 5801,
+      "spent": 3800,
+      "units": [
+        "機槍陣地 · 陣地 5 · 強化陣地 / 交叉火力",
+        "野戰炮 · 陣地 5 · 精準校射 / 重型彈藥",
+        "機槍陣地 · 陣地 5 · 強化陣地 / 交叉火力",
+        "野戰炮 · 陣地 5 · 精準校射 / 重型彈藥"
+      ],
+      "orders": [
+        "BARRAGE",
+        "TIMING",
+        "COUNTER",
+        "RISK"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 171,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 2078.7325000000005,
+          "branches": [
+            "MG_B3",
+            "MG_B5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 50438.70244999998,
+          "branches": [
+            "ARTILLERY_B3",
+            "ARTILLERY_B5"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 29239.10714999977,
+          "branches": [
+            "MG_B3",
+            "MG_B5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 12497.822900000003,
+          "branches": [
+            "ARTILLERY_B3",
+            "ARTILLERY_B5"
+          ]
+        }
+      ],
+      "purchaseInterval": 34.952941176469075
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "MG",
+        "ARTILLERY"
+      ],
+      "strategy": "tall",
+      "seed": 24,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-MG-ARTILLERY-tall-24-DEFENSE",
+      "at": "2026-09-05T11:59:26.909Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 954.7999999996794,
+      "earned": 5801,
+      "spent": 3780,
+      "units": [
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊",
+        "步槍陣地 · 陣地 5 · 精準瞄具 / 集中齊射"
+      ],
+      "orders": [
+        "FIRE",
+        "BELTS",
+        "SIGHTS",
+        "SPOTTERS"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 181,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 5743.3593999999675,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 50129.8879999998,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 37229.606799999936,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 5,
+          "damage": 1151.5108,
+          "branches": [
+            "RIFLE_A3",
+            "RIFLE_A5"
+          ]
+        }
+      ],
+      "purchaseInterval": 34.94411764705724
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "MG",
+        "ARTILLERY"
+      ],
+      "strategy": "hybrid",
+      "seed": 11,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-MG-ARTILLERY-hybrid-11-DEFENSE",
+      "at": "2026-09-05T11:59:26.948Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 948.3499999996852,
+      "earned": 5801,
+      "spent": 4700,
+      "units": [
+        "機槍陣地 · 陣地 5 · 強化陣地 / 交叉火力",
+        "野戰炮 · 陣地 5 · 精準校射 / 重型彈藥",
+        "機槍陣地 · 陣地 5 · 強化陣地 / 交叉火力",
+        "野戰炮 · 陣地 5 · 精準校射 / 重型彈藥",
+        "步槍陣地 · 陣地 5 · 熟練裝填 / 延伸防線"
+      ],
+      "orders": [
+        "BARRAGE",
+        "TIMING",
+        "COUNTER",
+        "RISK"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 170,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 1957.2415000000003,
+          "branches": [
+            "MG_B3",
+            "MG_B5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 51027.86544999997,
+          "branches": [
+            "ARTILLERY_B3",
+            "ARTILLERY_B5"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 28634.540149999724,
+          "branches": [
+            "MG_B3",
+            "MG_B5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 12634.717899999996,
+          "branches": [
+            "ARTILLERY_B3",
+            "ARTILLERY_B5"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "RIFLE_B3",
+            "RIFLE_B5"
+          ]
+        }
+      ],
+      "purchaseInterval": 32.83863636362989
+    },
+    {
+      "loadout": [
+        "RIFLE",
+        "MG",
+        "ARTILLERY"
+      ],
+      "strategy": "hybrid",
+      "seed": 24,
+      "doctrine": "DEFENSE",
+      "id": "RIFLE-MG-ARTILLERY-hybrid-24-DEFENSE",
+      "at": "2026-09-05T11:59:26.988Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 958.2499999996762,
+      "earned": 5801,
+      "spent": 4700,
+      "units": [
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊",
+        "步槍陣地 · 陣地 5 · 精準瞄具 / 集中齊射",
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊"
+      ],
+      "orders": [
+        "FIRE",
+        "BELTS",
+        "SIGHTS",
+        "SPOTTERS"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 174,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 6710.0973999999405,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 50411.74389999988,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 35752.24639999997,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        },
+        {
+          "unit": "RIFLE",
+          "level": 5,
+          "damage": 1380.2773000000002,
+          "branches": [
+            "RIFLE_A3",
+            "RIFLE_A5"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        }
+      ],
+      "purchaseInterval": 32.84772727272073
+    },
+    {
+      "loadout": [
+        "MG",
+        "ARTILLERY",
+        "ENGINEER"
+      ],
+      "strategy": "hybrid",
+      "seed": 18,
+      "doctrine": "ARTILLERY",
+      "id": "MG-ARTILLERY-ENGINEER-hybrid-18-ARTILLERY",
+      "at": "2026-09-05T11:59:27.059Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 952.7499999996812,
+      "earned": 5801,
+      "spent": 4700,
+      "units": [
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊",
+        "工兵陣地 · 陣地 5 · 工程協調 / 修復網絡",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊",
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊"
+      ],
+      "orders": [
+        "SPOTTERS",
+        "BELTS",
+        "ENGINEERS",
+        "FIRE"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 197,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 6189.558399999946,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 48723.52699999995,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_A3",
+            "ENGINEER_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 38341.27959999994,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        }
+      ],
+      "purchaseInterval": 32.824999999993544
+    },
+    {
+      "loadout": [
+        "MG",
+        "ARTILLERY",
+        "ENGINEER"
+      ],
+      "strategy": "hybrid",
+      "seed": 18,
+      "doctrine": "LOGISTICS",
+      "id": "MG-ARTILLERY-ENGINEER-hybrid-18-LOGISTICS",
+      "at": "2026-09-05T11:59:27.102Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 936.6499999996959,
+      "earned": 6851,
+      "spent": 4326,
+      "units": [
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊",
+        "工兵陣地 · 陣地 5 · 工程協調 / 修復網絡",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊",
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊"
+      ],
+      "orders": [
+        "SPOTTERS",
+        "BELTS",
+        "ENGINEERS",
+        "FIRE"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 177,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 4861.70279999999,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 53792.08179999995,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_A3",
+            "ENGINEER_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 35600.58039999994,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        }
+      ],
+      "purchaseInterval": 26.131818181818563
+    },
+    {
+      "loadout": [
+        "MG",
+        "ARTILLERY",
+        "ENGINEER"
+      ],
+      "strategy": "hybrid",
+      "seed": 18,
+      "doctrine": "ASSAULT",
+      "id": "MG-ARTILLERY-ENGINEER-hybrid-18-ASSAULT",
+      "at": "2026-09-05T11:59:27.148Z",
+      "result": "HELD",
+      "waves": 25,
+      "seconds": 958.499999999676,
+      "earned": 5801,
+      "spent": 4700,
+      "units": [
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊",
+        "工兵陣地 · 陣地 5 · 工程協調 / 修復網絡",
+        "野戰炮 · 陣地 5 · 高爆彈 / 彈幕射擊",
+        "機槍陣地 · 陣地 5 · 加強供彈 / 壓制射擊"
+      ],
+      "orders": [
+        "SPOTTERS",
+        "BELTS",
+        "ENGINEERS",
+        "FIRE"
+      ],
+      "commands": 5,
+      "reason": "防禦區已守住。",
+      "offers": 4,
+      "windows": 205,
+      "leakedBefore": 0,
+      "finalPositions": [
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 6972.80159999993,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 50438.85699999993,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        },
+        {
+          "unit": "ENGINEER",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "ENGINEER_A3",
+            "ENGINEER_A5"
+          ]
+        },
+        {
+          "unit": "ARTILLERY",
+          "level": 5,
+          "damage": 36842.70639999994,
+          "branches": [
+            "ARTILLERY_A3",
+            "ARTILLERY_A5"
+          ]
+        },
+        {
+          "unit": "MG",
+          "level": 5,
+          "damage": 0,
+          "branches": [
+            "MG_A3",
+            "MG_A5"
+          ]
+        }
+      ],
+      "purchaseInterval": 33.0659090909024
+    }
+  ],
+  "summary": {
+    "count": 27,
+    "wins": 27,
+    "averageMinutes": 16.75873456789512,
+    "averagePurchaseInterval": 31.90502134635904
+  }
+}

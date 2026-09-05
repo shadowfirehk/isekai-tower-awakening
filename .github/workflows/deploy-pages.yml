@@ -36,7 +36,11 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Configure GitHub Pages
+        # The historical engine must pass before the public build is published.
         uses: actions/configure-pages@v5
+
+      - name: Verify WWI battle and save regressions
+        run: pnpm test:wwi
 
       - name: Build static game
         run: pnpm build:pages

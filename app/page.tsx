@@ -1,7 +1,7 @@
-import GameApp from '@/components/game/game-app';
+import WWIApp from '@/components/wwi/wwi-app';
 
 export const dynamic = 'force-static';
 
 export default function Home() {
-  return <GameApp />;
+  return <WWIApp />;
 }
