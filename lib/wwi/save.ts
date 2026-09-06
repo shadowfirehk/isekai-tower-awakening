@@ -1,10 +1,19 @@
 import { UNIT_IDS, type UnitId, type DoctrineId, type FactionId } from './data';
+import {
+  normalizeNavigation,
+  scenarioById,
+  assertPlayableScenario,
+  VERDUN_SCENARIO_ID,
+  type CampaignNavigation,
+  type WarYear,
+} from './campaign';
 export const SAVE_KEY = 'wwi-field-command-v8';
 export const SAVE_VERSION = 8;
 export function permanentBonus(save: WWISave, id: UnitId): number {
   return (save.units[id].level + save.units[id].mark - 2) * 0.05;
 }
 export interface RunRecord {
+  scenarioId?: string;
   id: string;
   at: string;
   result: 'HELD' | 'LOST';
@@ -20,6 +29,11 @@ export interface RunRecord {
 export interface WWISave {
   saveVersion: 8;
   faction: FactionId;
+  navigation: CampaignNavigation;
+  campaignProgressByFaction: Record<
+    FactionId,
+    Record<string, { cleared: boolean; bestWave: number }>
+  >;
   doctrine: DoctrineId;
   loadout: UnitId[];
   supplies: number;
@@ -35,6 +49,11 @@ export interface WWISave {
 export const newSave = (): WWISave => ({
   saveVersion: 8,
   faction: 'ENTENTE',
+  navigation: normalizeNavigation({
+    selectedFaction: 'ENTENTE',
+    selectedYear: 1916,
+  }),
+  campaignProgressByFaction: { ENTENTE: {}, CENTRAL_POWERS: {} },
   doctrine: 'DEFENSE',
   loadout: ['MG', 'ARTILLERY', 'ENGINEER'],
   supplies: 0,
@@ -57,7 +76,7 @@ export function validateSave(raw: unknown): WWISave {
   if (
     !s ||
     s.saveVersion !== 8 ||
-    !['ENTENTE', 'CENTRAL'].includes(s.faction) ||
+    !['ENTENTE', 'CENTRAL', 'CENTRAL_POWERS'].includes(s.faction) ||
     !['DEFENSE', 'ARTILLERY', 'LOGISTICS', 'ASSAULT'].includes(s.doctrine)
   )
     throw new Error('戰役存檔格式不符。原始資料已保留。');
@@ -100,18 +119,60 @@ export function validateSave(raw: unknown): WWISave {
     s.bestWave > 25
   )
     throw new Error('戰役紀錄無效。');
-  return s;
+  // Upgrade original v8 in memory; preserve the source string until an explicit save.
+  const faction =
+    String(s.faction) === 'CENTRAL' ? 'CENTRAL_POWERS' : s.faction;
+  const cleared = s.cleared.map((id) =>
+    id === 'VERDUN_1916_FR' ? VERDUN_SCENARIO_ID : id,
+  );
+  if (cleared.some((id) => !scenarioById(id)?.implemented))
+    throw new Error('存檔包含未開放的任務進度。');
+  const progress: WWISave['campaignProgressByFaction'] = {
+    ENTENTE: {},
+    CENTRAL_POWERS: {},
+  };
+  if (cleared.includes(VERDUN_SCENARIO_ID) || s.bestWave > 0)
+    progress.ENTENTE[VERDUN_SCENARIO_ID] = {
+      cleared: cleared.includes(VERDUN_SCENARIO_ID),
+      bestWave: s.bestWave,
+    };
+  const history = s.history.map((r) => ({
+    ...r,
+    scenarioId: r.scenarioId ?? VERDUN_SCENARIO_ID,
+  }));
+  if (history.some((r) => !scenarioById(r.scenarioId)?.implemented))
+    throw new Error('戰報包含未開放的任務。');
+  return {
+    ...s,
+    faction,
+    cleared,
+    history,
+    campaignProgressByFaction: progress,
+    navigation: normalizeNavigation({
+      ...s.navigation,
+      selectedFaction: faction,
+    }),
+  };
 }
 export function loadSave(): WWISave {
   const raw = localStorage.getItem(SAVE_KEY);
   return raw ? validateSave(JSON.parse(raw)) : newSave();
 }
 export function writeSave(s: WWISave): WWISave {
-  validateSave(s);
-  localStorage.setItem(SAVE_KEY, JSON.stringify(s));
-  return s;
+  const next = validateSave(s);
+  localStorage.setItem(SAVE_KEY, JSON.stringify(next));
+  return next;
 }
 export function settleRun(save: WWISave, run: RunRecord): WWISave {
+  const scenario = scenarioById(run.scenarioId ?? VERDUN_SCENARIO_ID);
+  if (!scenario) throw new Error('未知的任務戰報。');
+  assertPlayableScenario(
+    scenario.scenarioId,
+    scenario.playableFaction,
+    scenario.playableNation,
+    Number(scenario.date.slice(0, 4)) as WarYear,
+  );
+  run = { ...run, scenarioId: scenario.scenarioId };
   if (save.receipts.includes(run.id)) return save;
   const ratio =
     run.result === 'HELD'
@@ -126,7 +187,7 @@ export function settleRun(save: WWISave, run: RunRecord): WWISave {
               ? 0.2
               : 0;
   const first =
-    run.result === 'HELD' && !save.cleared.includes('VERDUN_1916_FR');
+    run.result === 'HELD' && !save.cleared.includes(scenario.scenarioId);
   return {
     ...save,
     supplies: save.supplies + Math.floor(100 * ratio) + (first ? 80 : 0),
@@ -134,13 +195,36 @@ export function settleRun(save: WWISave, run: RunRecord): WWISave {
     technology:
       save.technology + (run.result === 'HELD' ? 5 : 0) + (first ? 5 : 0),
     bestWave: Math.max(save.bestWave, run.waves),
-    cleared: run.result === 'HELD' ? ['VERDUN_1916_FR'] : save.cleared,
+    cleared:
+      run.result === 'HELD'
+        ? [...new Set([...save.cleared, scenario.scenarioId])]
+        : save.cleared,
+    campaignProgressByFaction: {
+      ...save.campaignProgressByFaction,
+      [scenario.playableFaction]: {
+        ...save.campaignProgressByFaction[scenario.playableFaction],
+        [scenario.scenarioId]: {
+          cleared:
+            run.result === 'HELD' || save.cleared.includes(scenario.scenarioId),
+          bestWave: Math.max(save.bestWave, run.waves),
+        },
+      },
+    },
     receipts: [...save.receipts, run.id],
     history: [run, ...save.history].slice(0, 30),
   };
 }
-export function quickResolve(save: WWISave): WWISave {
-  if (!save.cleared.includes('VERDUN_1916_FR'))
+export function quickResolve(
+  save: WWISave,
+  scenarioId = VERDUN_SCENARIO_ID,
+): WWISave {
+  assertPlayableScenario(
+    scenarioId,
+    save.navigation.selectedFaction,
+    save.navigation.selectedNation ?? 'FRANCE',
+    save.navigation.selectedYear,
+  );
+  if (!save.cleared.includes(scenarioId))
     throw new Error('必須先完整守住凡爾登戰區。');
   return {
     ...save,
@@ -148,6 +232,13 @@ export function quickResolve(save: WWISave): WWISave {
     parts: save.parts + 20,
     technology: save.technology + 5,
   };
+}
+export function selectCampaign(
+  save: WWISave,
+  patch: Partial<CampaignNavigation>,
+): WWISave {
+  const navigation = normalizeNavigation({ ...save.navigation, ...patch });
+  return { ...save, faction: navigation.selectedFaction, navigation };
 }
 export function trainUnit(
   save: WWISave,

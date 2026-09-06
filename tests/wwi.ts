@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { runFactionTests } from './wwi-factions';
 import { runWWIRegressions } from './wwi-regressions';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { VerdunEngine } from '../lib/wwi/engine';
@@ -23,6 +24,7 @@ import {
   type DoctrineId,
 } from '../lib/wwi/data';
 const checks: string[] = [];
+checks.push(...runFactionTests());
 checks.push(...(await runWWIRegressions()));
 function check(name: string, fn: () => void) {
   fn();

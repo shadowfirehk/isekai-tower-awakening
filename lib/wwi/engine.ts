@@ -1,5 +1,5 @@
 import {
-  UNITS,
+  UNIT_ARCHETYPES as UNITS,
   UNIT_IDS,
   FORMATIONS,
   ORDERS,
@@ -15,6 +15,12 @@ import {
 } from './data';
 import type { WWISave, RunRecord } from './save';
 import { permanentBonus } from './save';
+import {
+  VERDUN_SCENARIO_ID,
+  assertPlayableScenario,
+  unitVariantForScenario,
+  orderAvailable,
+} from './campaign';
 
 export type BattleState =
   | 'SETUP'
@@ -139,7 +145,16 @@ export class VerdunEngine {
   constructor(
     readonly save: WWISave,
     seed = Date.now(),
+    scenarioId = VERDUN_SCENARIO_ID,
   ) {
+    const scenario = assertPlayableScenario(
+      scenarioId,
+      save.faction,
+      save.navigation.selectedNation ?? 'FRANCE',
+      save.navigation.selectedYear,
+    );
+    if (save.loadout.some((id) => !unitVariantForScenario(id, scenario)))
+      throw new Error('此情境尚無相符的國家兵種。');
     this.loadout = [...save.loadout];
     if (
       this.loadout.length !== 3 ||
@@ -365,7 +380,15 @@ export class VerdunEngine {
   private openOrders() {
     this.state = 'ORDERS';
     this.offers = [];
-    const available = ORDERS.filter((o) => !this.mod(o.id));
+    const scenario = assertPlayableScenario(
+      VERDUN_SCENARIO_ID,
+      'ENTENTE',
+      'FRANCE',
+      1916,
+    );
+    const available = ORDERS.filter(
+      (o) => !this.mod(o.id) && orderAvailable(o.availability, scenario),
+    );
     for (const category of ['SUPPORT', 'GENERAL', 'TACTICAL']) {
       let pool = available.filter(
         (o) => o.category === category && !this.offers.includes(o),
@@ -844,6 +867,7 @@ export class VerdunEngine {
   record(id: string): RunRecord {
     if (!this.terminal()) throw new Error('戰局尚未結束。');
     return {
+      scenarioId: VERDUN_SCENARIO_ID,
       id,
       at: new Date().toISOString(),
       result: this.state as 'HELD' | 'LOST',

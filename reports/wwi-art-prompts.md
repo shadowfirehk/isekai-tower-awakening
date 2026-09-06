@@ -2,7 +2,24 @@
 
 工具：內建 image_gen；三張圖像均保存在專案 public/wwi 中。未使用 CLI 或外部 API 金鑰。UI 圖標使用既有 lucide 向量系統。
 
-## verdun.png
+## Phase 2 — central-command.png
+
+Mode: builtin image_gen, new image generation, no reference image. Final asset: `public/wwi/central-command.png` (1536 × 1024). Inspected before integration. The German officer represents Germany, not a universal Central Powers uniform. Faction markers are existing lucide code-native icons, not invented historical flags.
+
+Exact generation prompt:
+
+Use case: historical-scene
+Asset type: website faction card illustration, landscape 3:2.
+Primary request: A German field-command and trench scene in 1916 during World War I. This is a representative German scene for a Central Powers card, not an attempt to depict every Central nation.
+Scene/backdrop: A timber map table in a trench command position, with trenches and a few German soldiers in field-gray receding into the background.
+Subject: An adult German officer with a thoughtful, humane face, wearing a restrained period-accurate field-gray German WWI uniform and period peaked cap, studying a paper map on the timber table.
+Style/medium: Japanese historical anime illustration in subtle watercolor washes and delicate ink lines, painterly paper texture, sober historical drama.
+Composition/framing: Wide landscape 3:2 composition; clear readable officer, map table, and environment, suitable for a faction selection card.
+Lighting/mood: Soft overcast daylight, dignified and neutral presentation, serious and reflective.
+Color palette: Muted olive, gray, brown, and subdued brass.
+Constraints: No text or lettering, no watermark, no invented flags, no Nazi or WWII insignia, no demonic or villain elements, no gore. Historical WWI setting and clothing.
+
+## verdun.png (original prompt)
 
 專案路徑：public/wwi/verdun.png
 

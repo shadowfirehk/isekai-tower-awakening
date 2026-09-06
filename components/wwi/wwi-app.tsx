@@ -1,4 +1,5 @@
 'use client';
+/* oxlint-disable next/no-img-element -- Static GitHub Pages assets have no image optimization server. */
 import {
   useCallback,
   useEffect,
@@ -27,14 +28,12 @@ import {
   DOCTRINES,
   FACTIONS,
   FORMATIONS,
-  NATIONS,
   ORDERS,
   PATHS,
   SLOTS,
   UNIT_IDS,
   UNITS,
   VERDUN,
-  YEARS,
   type DoctrineId,
   type FactionId,
   type UnitId,
@@ -47,9 +46,27 @@ import {
   settleRun,
   trainUnit,
   writeSave,
+  selectCampaign,
   type WWISave,
 } from '@/lib/wwi/save';
 import { VerdunEngine, type DefensiveUnitRuntime } from '@/lib/wwi/engine';
+import {
+  FactionSelect,
+  CampaignBrowser,
+  MissionHeader,
+  FactionHistory,
+} from './faction-ui';
+import {
+  VERDUN_SCENARIO,
+  VERDUN_SCENARIO_ID,
+  assertPlayableScenario,
+  nationById,
+  activeNations,
+  scenarioById,
+  battleById,
+  type WarYear,
+  type BattleScenarioData,
+} from '@/lib/wwi/campaign';
 
 const art = publicAssetPath('/wwi/formations.png');
 const backdrop = publicAssetPath('/wwi/verdun.png');
@@ -104,6 +121,8 @@ export default function WWIApp() {
   const [screen, setScreen] = useState<
     | 'HOME'
     | 'CAMPAIGN'
+    | 'FACTIONS'
+    | 'FACTION_INFO'
     | 'BRIEFING'
     | 'UNITS'
     | 'COMMANDER'
@@ -111,9 +130,12 @@ export default function WWIApp() {
     | 'RECORDS'
     | 'BATTLE'
   >('HOME');
-  const [faction, setFaction] = useState<FactionId>('ENTENTE'),
-    [year, setYear] = useState(1916),
-    [message, setMessage] = useState('');
+  const [message, setMessage] = useState('');
+  const faction = save.navigation.selectedFaction;
+  const commanderNation = nationById(
+    save.navigation.selectedNation ??
+      activeNations(faction, save.navigation.selectedYear)[0].id,
+  );
   const [loaded, setLoaded] = useState(false),
     [storageBlocked, setStorageBlocked] = useState(false),
     [battleKey, setBattleKey] = useState(0);
@@ -151,7 +173,6 @@ export default function WWIApp() {
         const s = loadSave();
         saveRef.current = s;
         setSave(s);
-        setFaction(s.faction);
       } catch (e) {
         setMessage(String(e));
         setStorageBlocked(true);
@@ -186,14 +207,61 @@ export default function WWIApp() {
     setScreen(next);
   };
   const selectFaction = (id: FactionId) => {
-    setFaction(id);
-    commit((s) => ({ ...s, faction: id }));
+    if (
+      !commit((s) =>
+        selectCampaign(s, {
+          selectedFaction: id,
+          selectedNation: null,
+          selectedTheatre: 'ALL',
+          selectedScenario: null,
+        }),
+      )
+    )
+      return;
     navigate('CAMPAIGN');
   };
+  const openMission = (scenario: BattleScenarioData) => {
+    try {
+      const year = Number(scenario.date.slice(0, 4)) as WarYear;
+      assertPlayableScenario(
+        scenario.scenarioId,
+        scenario.playableFaction,
+        scenario.playableNation,
+        year,
+      );
+      if (
+        !commit((s) =>
+          selectCampaign(s, {
+            selectedFaction: scenario.playableFaction,
+            selectedYear: year,
+            selectedNation: scenario.playableNation,
+            selectedTheatre: battleById(scenario.battleId).theatre,
+            selectedScenario: scenario.scenarioId,
+          }),
+        )
+      )
+        return;
+      navigate('BRIEFING');
+    } catch (error) {
+      setMessage(String(error));
+    }
+  };
+  const openVerdun = () => openMission(VERDUN_SCENARIO);
   const start = () => {
     if (!loaded || storageBlocked) return;
-    if (!commit((s) => ({ ...s, faction: 'ENTENTE' }))) return;
-    setFaction('ENTENTE');
+    const nav = saveRef.current.navigation;
+    try {
+      assertPlayableScenario(
+        nav.selectedScenario ?? '',
+        nav.selectedFaction,
+        nav.selectedNation!,
+        nav.selectedYear,
+      );
+    } catch (error) {
+      setMessage(String(error));
+      return;
+    }
+    if (!commit((s) => s)) return;
     setBattleKey((k) => k + 1);
     navigate('BATTLE');
   };
@@ -219,7 +287,7 @@ export default function WWIApp() {
         save={save}
         commit={commit}
         onExit={() => navigate('CAMPAIGN')}
-        onLoadout={() => navigate('BRIEFING')}
+        onLoadout={openVerdun}
         onUnits={() => navigate('UNITS')}
         onSound={sound}
         onShot={onShot}
@@ -229,7 +297,11 @@ export default function WWIApp() {
   return (
     <main
       className="ww-app"
-      style={{ '--ww-background': `url("${backdrop}")` } as CSSProperties}
+      style={
+        {
+          '--ww-background': `url("${screen === 'HOME' ? backdrop : publicAssetPath(FACTIONS[faction].art)}")`,
+        } as CSSProperties
+      }
     >
       <header className="ww-top">
         <button className="ww-brand" onClick={() => navigate('HOME')}>
@@ -285,17 +357,17 @@ export default function WWIApp() {
                 <button
                   className="ww-primary"
                   disabled={!loaded || storageBlocked}
-                  onClick={() => selectFaction('ENTENTE')}
+                  onClick={() => navigate('FACTIONS')}
                 >
                   <Flag size={20} />
-                  協約國戰役
+                  選擇陣營 · 進入戰役
                   <ArrowRight size={20} />
                 </button>
                 <button
                   disabled={!loaded || storageBlocked}
-                  onClick={() => selectFaction('CENTRAL')}
+                  onClick={() => navigate('FACTION_INFO')}
                 >
-                  同盟國戰役 <span>戰役規劃</span>
+                  陣營說明 <span>參戰時間與歷史</span>
                 </button>
               </div>
             </div>
@@ -355,140 +427,29 @@ export default function WWIApp() {
             <ArrowLeft size={18} />
             返回司令部
           </button>
+          {screen === 'FACTIONS' && (
+            <FactionSelect
+              onSelect={selectFaction}
+              onInfo={() => navigate('FACTION_INFO')}
+            />
+          )}
+          {screen === 'FACTION_INFO' && <FactionHistory />}
           {screen === 'CAMPAIGN' && (
-            <>
-              <div className="ww-document-heading">
-                <div>
-                  <p className="ww-eyebrow">{FACTIONS[faction].english}</p>
-                  <h1>{FACTIONS[faction].name}戰役</h1>
-                  <p>不同軍隊的視角，同一場戰爭。</p>
-                </div>
-                <button
-                  onClick={() =>
-                    selectFaction(faction === 'ENTENTE' ? 'CENTRAL' : 'ENTENTE')
-                  }
-                >
-                  切換陣營
-                </button>
-              </div>
-              <div className="ww-year-nav">
-                {YEARS.map((y) => (
-                  <button
-                    className={year === y ? 'active' : ''}
-                    key={y}
-                    onClick={() => setYear(y)}
-                  >
-                    {y}
-                    <small>
-                      {y === 1916 && faction === 'ENTENTE'
-                        ? '凡爾登開放'
-                        : '戰役規劃'}
-                    </small>
-                  </button>
-                ))}
-              </div>
-              <div className="ww-campaign-layout">
-                <div className="ww-paper-map">
-                  <span className="ww-map-label">
-                    WESTERN FRONT
-                    <br />
-                    法國東北部 · 示意圖
-                  </span>
-                  <svg viewBox="0 0 600 360" aria-hidden="true">
-                    <path d="M90 320L130 265 105 215 185 145 280 140 355 82 415 100 440 60 545 110 510 200 455 260 420 330Z" />
-                    <path
-                      className="front"
-                      d="M390 70L350 125 380 170 345 230 400 300"
-                    />
-                    <path
-                      className="river"
-                      d="M110 120Q200 310 320 210T530 90"
-                    />
-                    <circle cx="350" cy="210" r="8" />
-                    <text x="365" y="215">
-                      VERDUN
-                    </text>
-                    <text x="190" y="280">
-                      FRANCE
-                    </text>
-                  </svg>
-                  <span className="ww-map-coordinate">
-                    49° N / 5° E · 戰略位置示意
-                  </span>
-                </div>
-                <article className="ww-mission-card">
-                  <span className="ww-eyebrow">
-                    {year} · {faction === 'ENTENTE' ? '協約國' : '同盟國'}
-                  </span>
-                  {year === 1916 && faction === 'ENTENTE' ? (
-                    <>
-                      <h2>凡爾登戰役</h2>
-                      <p>{VERDUN.date}</p>
-                      <p>法國 · 西線戰場</p>
-                      <p>{VERDUN.objective}</p>
-                      <span className="ww-stamp">
-                        {save.cleared.length ? '防禦區已守住' : '可進入戰役'}
-                      </span>
-                      <button
-                        className="ww-primary"
-                        onClick={() => navigate('BRIEFING')}
-                      >
-                        閱讀作戰簡報 <ArrowRight size={18} />
-                      </button>
-                      {save.cleared.length > 0 && (
-                        <button
-                          onClick={() => {
-                            if (commit(quickResolve))
-                              setMessage(
-                                '快速結算完成：100 軍需物資、20 零件、5 技術點。',
-                              );
-                          }}
-                        >
-                          快速結算 · 後勤補給
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <h2>戰區尚未開放</h2>
-                      <p>本次部署只開放 1916 年法軍凡爾登防禦區。</p>
-                      <p>
-                        {faction === 'CENTRAL'
-                          ? FACTIONS.CENTRAL.ending
-                          : '其他年份的戰役將在此試玩版驗證後製作。'}
-                      </p>
-                      <button
-                        onClick={() => {
-                          setFaction('ENTENTE');
-                          setYear(1916);
-                        }}
-                      >
-                        前往凡爾登 · 1916
-                      </button>
-                    </>
-                  )}
-                </article>
-              </div>
-              <p className="ww-note">
-                參戰國依年份顯示：
-                {NATIONS.filter(
-                  (n) =>
-                    n.faction === faction && n.from <= year && n.to >= year,
-                )
-                  .map((n) => n.name)
-                  .join('、')}
-                。俄羅斯帝國於 1917 年終結；1918
-                年蘇俄與同盟國簽訂布列斯特—立陶夫斯克條約。
-              </p>
-            </>
+            <CampaignBrowser
+              save={save}
+              onChange={(patch) => commit((s) => selectCampaign(s, patch))}
+              onMission={openMission}
+              onSweep={(id) => {
+                if (commit((s) => quickResolve(s, id)))
+                  setMessage('快速結算完成：100 軍需物資、20 零件、5 技術點。');
+              }}
+              onFaction={() => navigate('FACTIONS')}
+              onInfo={() => navigate('FACTION_INFO')}
+            />
           )}
           {screen === 'BRIEFING' && (
             <>
-              <p className="ww-eyebrow">作戰簡報 / FRANCE · 1916</p>
-              <h1>凡爾登戰役</h1>
-              <p>
-                {VERDUN.date} · {VERDUN.location}
-              </p>
+              <MissionHeader scenario={VERDUN_SCENARIO} />
               <div className="ww-briefing">
                 <div>
                   <p>{VERDUN.history.background}</p>
@@ -569,11 +530,8 @@ export default function WWIApp() {
                   </article>
                 ))}
               </div>
-              <button
-                className="ww-primary"
-                onClick={() => navigate('BRIEFING')}
-              >
-                返回作戰簡報
+              <button className="ww-primary" onClick={openVerdun}>
+                前往法軍凡爾登簡報
               </button>
             </>
           )}
@@ -581,7 +539,25 @@ export default function WWIApp() {
             <>
               <p className="ww-eyebrow">軍事任命 · 可於戰前更換</p>
               <h1>指揮官專長</h1>
-              <p>你代表法軍戰區指揮職務；專長由你選擇。</p>
+              <p>
+                {FACTIONS[faction].name} · {commanderNation.displayNameZhHant} ·
+                專長不受國籍限制。
+              </p>
+              {commanderNation.commanderArt ? (
+                <img
+                  className="ww-commander-art"
+                  src={publicAssetPath(commanderNation.commanderArt)}
+                  alt={`${commanderNation.displayNameZhHant}軍官風格示意，非特定史實人物`}
+                />
+              ) : (
+                <p className="ww-note">
+                  此國軍官美術未製作，不使用其他國家的制服代替。
+                </p>
+              )}
+              <p className="ww-note">
+                {commanderNation.uniformVisualProfile}
+                。本版可實際部署的任務仍只有法國凡爾登。
+              </p>
               <div className="ww-doctrine-grid">
                 {(Object.keys(DOCTRINES) as DoctrineId[]).map((id) => (
                   <button
@@ -596,22 +572,19 @@ export default function WWIApp() {
                   </button>
                 ))}
               </div>
-              <button
-                className="ww-primary"
-                onClick={() => navigate('BRIEFING')}
-              >
-                返回作戰簡報
+              <button className="ww-primary" onClick={openVerdun}>
+                前往法軍凡爾登簡報
               </button>
             </>
           )}
           {screen === 'HISTORY' && (
             <>
+              <button onClick={() => navigate('FACTION_INFO')}>
+                陣營說明與參戰時間
+              </button>
               <HistoryPanel />
-              <button
-                className="ww-primary"
-                onClick={() => navigate('BRIEFING')}
-              >
-                返回作戰簡報
+              <button className="ww-primary" onClick={openVerdun}>
+                前往法軍凡爾登簡報
               </button>
             </>
           )}
@@ -629,6 +602,22 @@ export default function WWIApp() {
                       {r.result === 'HELD' ? '防禦區守住' : '戰區失守'} ·{' '}
                       {r.waves} 輪 · {time(r.seconds)}
                     </h3>
+                    <p>
+                      {
+                        FACTIONS[
+                          scenarioById(r.scenarioId ?? VERDUN_SCENARIO_ID)!
+                            .playableFaction
+                        ].name
+                      }{' '}
+                      ·{' '}
+                      {
+                        nationById(
+                          scenarioById(r.scenarioId ?? VERDUN_SCENARIO_ID)!
+                            .playableNation,
+                        ).displayNameZhHant
+                      }{' '}
+                      · 凡爾登任務
+                    </p>
                     <p>
                       收入 {r.earned} / 支出 {r.spent} · 指揮命令 {r.commands}{' '}
                       次
@@ -852,7 +841,7 @@ function Battle({
           <ArrowLeft />
         </button>
         <div>
-          <span className="ww-eyebrow">法國 · 1916</span>
+          <MissionHeader scenario={VERDUN_SCENARIO} compact />
           <h1>凡爾登防禦區</h1>
         </div>
         <div className="ww-hud-stat">
@@ -1278,6 +1267,7 @@ function Battle({
         <div className="ww-overlay ww-results-overlay">
           <section className="ww-result">
             <span className="ww-eyebrow">FIELD REPORT · VERDUN 1916</span>
+            <MissionHeader scenario={VERDUN_SCENARIO} compact />
             <h1>{s.state === 'HELD' ? '防禦區守住' : '戰區失守'}</h1>
             <p className="ww-result-english">
               {s.state === 'HELD' ? 'POSITION HELD' : 'SECTOR LOST'}

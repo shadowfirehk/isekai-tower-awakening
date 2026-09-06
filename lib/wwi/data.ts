@@ -1,34 +1,14 @@
-export type FactionId = 'ENTENTE' | 'CENTRAL';
+import type {
+  FactionId,
+  WarYear,
+  NationId,
+  OrderAvailability,
+} from './campaign';
+export { FACTIONS, NATIONS, YEARS } from './campaign';
+export type { FactionId, WarYear } from './campaign';
 export type UnitId = 'RIFLE' | 'MG' | 'ARTILLERY' | 'ENGINEER';
 export type DoctrineId = 'DEFENSE' | 'ARTILLERY' | 'LOGISTICS' | 'ASSAULT';
 export type FormationId = 'INFANTRY' | 'ASSAULT' | 'SUPPORTED' | 'ELITE';
-export type WarYear = 1914 | 1915 | 1916 | 1917 | 1918;
-export const YEARS: WarYear[] = [1914, 1915, 1916, 1917, 1918];
-export const FACTIONS = {
-  ENTENTE: {
-    name: '協約國',
-    english: 'ENTENTE POWERS',
-    description: '法國防線 · 西線戰場',
-    ending: '1918 年 11 月 11 日停戰，西線戰鬥結束。',
-  },
-  CENTRAL: {
-    name: '同盟國',
-    english: 'CENTRAL POWERS',
-    description: '德意志、奧匈、鄂圖曼與保加利亞的戰爭視角',
-    ending: '1918 年同盟國相繼退出戰爭；德國於 11 月簽署停戰協定。',
-  },
-} as const;
-export const NATIONS = [
-  { id: 'FR', name: '法國', faction: 'ENTENTE', from: 1914, to: 1918 },
-  { id: 'GB', name: '英國', faction: 'ENTENTE', from: 1914, to: 1918 },
-  { id: 'RU', name: '俄羅斯帝國', faction: 'ENTENTE', from: 1914, to: 1917 },
-  { id: 'IT', name: '義大利', faction: 'ENTENTE', from: 1915, to: 1918 },
-  { id: 'US', name: '美國', faction: 'ENTENTE', from: 1917, to: 1918 },
-  { id: 'DE', name: '德意志帝國', faction: 'CENTRAL', from: 1914, to: 1918 },
-  { id: 'AH', name: '奧匈帝國', faction: 'CENTRAL', from: 1914, to: 1918 },
-  { id: 'OT', name: '鄂圖曼帝國', faction: 'CENTRAL', from: 1914, to: 1918 },
-  { id: 'BG', name: '保加利亞', faction: 'CENTRAL', from: 1915, to: 1918 },
-] as const;
 export interface HistoricalInfoData {
   background: string;
   participants: string;
@@ -114,6 +94,9 @@ export interface UnitData {
   art: number;
   availableFromYear: number;
   nation: string;
+  nationId: NationId;
+  factionId: FactionId;
+  variantId: string;
 }
 export const UNITS: Record<UnitId, UnitData> = {
   RIFLE: {
@@ -129,6 +112,9 @@ export const UNITS: Record<UnitId, UnitData> = {
     art: 0,
     availableFromYear: 1914,
     nation: 'FR',
+    nationId: 'FRANCE',
+    factionId: 'ENTENTE',
+    variantId: 'FRANCE_RIFLE',
   },
   MG: {
     id: 'MG',
@@ -143,6 +129,9 @@ export const UNITS: Record<UnitId, UnitData> = {
     art: 1,
     availableFromYear: 1914,
     nation: 'FR',
+    nationId: 'FRANCE',
+    factionId: 'ENTENTE',
+    variantId: 'FRANCE_MG',
   },
   ARTILLERY: {
     id: 'ARTILLERY',
@@ -157,6 +146,9 @@ export const UNITS: Record<UnitId, UnitData> = {
     art: 2,
     availableFromYear: 1914,
     nation: 'FR',
+    nationId: 'FRANCE',
+    factionId: 'ENTENTE',
+    variantId: 'FRANCE_ARTILLERY',
   },
   ENGINEER: {
     id: 'ENGINEER',
@@ -171,9 +163,35 @@ export const UNITS: Record<UnitId, UnitData> = {
     art: 3,
     availableFromYear: 1914,
     nation: 'FR',
+    nationId: 'FRANCE',
+    factionId: 'ENTENTE',
+    variantId: 'FRANCE_ENGINEER',
   },
 };
 export const UNIT_IDS = Object.keys(UNITS) as UnitId[];
+export type UnitArchetypeData = Pick<
+  UnitData,
+  | 'id'
+  | 'name'
+  | 'english'
+  | 'role'
+  | 'cost'
+  | 'damage'
+  | 'interval'
+  | 'range'
+  | 'radius'
+>;
+// Shared mechanics contain no national artwork or ownership; those live in UNIT_VARIANTS.
+export const UNIT_ARCHETYPES = Object.fromEntries(
+  UNIT_IDS.map((id) => {
+    const { name, english, role, cost, damage, interval, range, radius } =
+      UNITS[id];
+    return [
+      id,
+      { id, name, english, role, cost, damage, interval, range, radius },
+    ];
+  }),
+) as Record<UnitId, UnitArchetypeData>;
 export interface UnitUpgradeData {
   id: string;
   name: string;
@@ -280,8 +298,9 @@ export interface FieldOrderData {
   description: string;
   category: 'SUPPORT' | 'GENERAL' | 'TACTICAL';
   unit?: UnitId;
+  availability: OrderAvailability;
 }
-export const ORDERS: FieldOrderData[] = [
+const orderDefinitions: Omit<FieldOrderData, 'availability'>[] = [
   {
     id: 'FIRE',
     name: '集中炮火',
@@ -378,6 +397,10 @@ export const ORDERS: FieldOrderData[] = [
     category: 'TACTICAL',
   },
 ];
+export const ORDERS: FieldOrderData[] = orderDefinitions.map((order) => ({
+  ...order,
+  availability: { scope: 'UNIVERSAL' },
+}));
 export const FORMATIONS: Record<
   FormationId,
   {
