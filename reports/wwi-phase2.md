@@ -53,7 +53,7 @@ Central Powers: Tannenberg 1914, Marne 1914, Gorlice–Tarnów 1915, Gallipoli 1
 ## Verification
 
 - TypeScript: PASS.
-- `pnpm test:wwi`: PASS. Ten new faction regression groups, eight previous targeted regression groups, original economic/engine checks, and 27/27 successful balance simulations. Mean duration 16.794 minutes, mean purchase interval 31.989 seconds. Idle/no-cost strategy still fails as intended.
+- `pnpm test:wwi`: PASS. Ten faction regression groups, eight targeted regression groups, original economic/engine checks, and 27/27 successful 20-wave balance simulations. Mean duration 12.982 minutes, mean purchase interval 31.836 seconds. Idle/no-cost strategy still fails as intended.
 - Scoped `oxlint lib/wwi components/wwi tests/wwi-factions.ts tests/wwi.ts`: PASS. Static image use has a documented rule exception because GitHub Pages has no image-optimization server.
 - `pnpm build`: PASS on Windows. Linux GitHub Actions additionally runs the test suite and static Pages build before deployment.
 - Full repository lint: NOT CLEAN due to pre-existing unused imports, accessibility and typing errors in dormant fantasy/shared UI files; these were not silently changed or represented as fixed.

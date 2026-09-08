@@ -535,6 +535,7 @@ export const HISTORICAL_BATTLES: HistoricalBattleData[] = battleRows.map(
 export const battleById = (id: string) =>
   HISTORICAL_BATTLES.find((b) => b.battleId === id)!;
 export type UnitArchetypeId = 'RIFLE' | 'MG' | 'ARTILLERY' | 'ENGINEER';
+export const VERDUN_WAVE_COUNT = 20;
 export interface BattleScenarioData {
   scenarioId: string;
   battleId: string;
@@ -546,7 +547,7 @@ export interface BattleScenarioData {
   opposingNations: NationId[];
   objective: string;
   unitLoadoutRules: { count: number; archetypes: UnitArchetypeId[] } | null;
-  waveConfiguration: { id: 'VERDUN_25'; count: 25 } | null;
+  waveConfiguration: { id: 'VERDUN_20'; count: 20 } | null;
   gameplayAbstractionNote: string;
   rewardConfig: { supplies: number; parts: number; technology: number } | null;
   implemented: boolean;
@@ -558,7 +559,7 @@ const scenarioRows: ScenarioRow[] = [
   ['YPRES_1914', 'UNITED_KINGDOM', '守住港口進路'],
   ['GALLIPOLI_1915', 'UNITED_KINGDOM', '建立登陸場'],
   ['YPRES_1915', 'UNITED_KINGDOM', '維持防線'],
-  ['VERDUN_1916', 'FRANCE', '守住法軍防禦區，抵擋 25 輪攻勢，保護後方交通線。'],
+  ['VERDUN_1916', 'FRANCE', '守住法軍防禦區，抵擋 20 輪攻勢，保護後方交通線。'],
   ['SOMME_1916', 'UNITED_KINGDOM', '推進防禦地帶'],
   ['ARRAS_1917', 'UNITED_KINGDOM', '支援春季攻勢'],
   ['PASSCHENDAELE_1917', 'UNITED_KINGDOM', '維持泥地交通線'],
@@ -601,9 +602,11 @@ export const SCENARIOS: BattleScenarioData[] = scenarioRows.map(
       unitLoadoutRules: implemented
         ? { count: 3, archetypes: ['RIFLE', 'MG', 'ARTILLERY', 'ENGINEER'] }
         : null,
-      waveConfiguration: implemented ? { id: 'VERDUN_25', count: 25 } : null,
+      waveConfiguration: implemented
+        ? { id: 'VERDUN_20', count: VERDUN_WAVE_COUNT }
+        : null,
       gameplayAbstractionNote: implemented
-        ? '7 處陣地、25 波與戰地資源是遊戲抽象，不是歷史戰鬥時序。'
+        ? '7 處陣地、20 波與戰地資源是遊戲抽象，不是歷史戰鬥時序。'
         : '規劃資料；未製作波次、部隊數值或獎勵。',
       rewardConfig: implemented
         ? { supplies: 100, parts: 20, technology: 5 }

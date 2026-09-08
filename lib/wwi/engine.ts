@@ -17,6 +17,7 @@ import type { WWISave, RunRecord } from './save';
 import { permanentBonus } from './save';
 import {
   VERDUN_SCENARIO_ID,
+  VERDUN_WAVE_COUNT,
   assertPlayableScenario,
   unitVariantForScenario,
   orderAvailable,
@@ -764,7 +765,7 @@ export class VerdunEngine {
         this.fx('IMPACT', e, e, 0, 0.55);
       } else if (e.progress >= 1) {
         const loss = e.major
-          ? this.wave === 25
+          ? this.wave === VERDUN_WAVE_COUNT
             ? this.strength
             : 5
           : e.type === 'SUPPORTED'
@@ -794,7 +795,7 @@ export class VerdunEngine {
           8;
       this.resource += bonus;
       this.earned += bonus;
-      if (this.wave === 25) {
+      if (this.wave === VERDUN_WAVE_COUNT) {
         this.finish('HELD');
         return;
       }

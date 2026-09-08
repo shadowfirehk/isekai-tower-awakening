@@ -4,6 +4,7 @@ import {
   scenarioById,
   assertPlayableScenario,
   VERDUN_SCENARIO_ID,
+  VERDUN_WAVE_COUNT,
   type CampaignNavigation,
   type WarYear,
 } from './campaign';
@@ -131,10 +132,11 @@ export function validateSave(raw: unknown): WWISave {
     ENTENTE: {},
     CENTRAL_POWERS: {},
   };
-  if (cleared.includes(VERDUN_SCENARIO_ID) || s.bestWave > 0)
+  const bestWave = Math.min(s.bestWave, VERDUN_WAVE_COUNT);
+  if (cleared.includes(VERDUN_SCENARIO_ID) || bestWave > 0)
     progress.ENTENTE[VERDUN_SCENARIO_ID] = {
       cleared: cleared.includes(VERDUN_SCENARIO_ID),
-      bestWave: s.bestWave,
+      bestWave,
     };
   const history = s.history.map((r) => ({
     ...r,
@@ -145,6 +147,7 @@ export function validateSave(raw: unknown): WWISave {
   return {
     ...s,
     faction,
+    bestWave,
     cleared,
     history,
     campaignProgressByFaction: progress,
@@ -177,7 +180,7 @@ export function settleRun(save: WWISave, run: RunRecord): WWISave {
   const ratio =
     run.result === 'HELD'
       ? 1
-      : run.waves >= 20
+      : run.waves >= VERDUN_WAVE_COUNT - 2
         ? 0.7
         : run.waves >= 15
           ? 0.5

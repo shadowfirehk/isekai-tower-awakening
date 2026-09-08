@@ -3,6 +3,7 @@ import { runFactionTests } from './wwi-factions';
 import { runWWIRegressions } from './wwi-regressions';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { VerdunEngine } from '../lib/wwi/engine';
+import { VERDUN_WAVE_COUNT } from '../lib/wwi/campaign';
 import {
   newSave,
   validateSave,
@@ -242,9 +243,10 @@ function simulate(
     settled = settleRun(save, record);
   assert.equal(settleRun(settled, record).supplies, settled.supplies);
   if (record.result === 'HELD') {
+    assert.equal(record.waves, VERDUN_WAVE_COUNT);
     assert(settled.cleared.length);
     assert.equal(quickResolve(settled).supplies - settled.supplies, 100);
-    assert.equal(offers, 4);
+    assert.equal(offers, 3);
   } else assert.equal(settled.cleared.length, 0);
   const retry = new VerdunEngine(settled);
   assert.equal(retry.snapshot().resource, 300);

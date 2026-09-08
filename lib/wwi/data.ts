@@ -1,3 +1,4 @@
+import { VERDUN_WAVE_COUNT } from './campaign';
 import type {
   FactionId,
   WarYear,
@@ -42,7 +43,7 @@ export const VERDUN: CampaignMissionData = {
   date: '1916.02.21 — 12.18',
   location: '法國 · 凡爾登北部高地',
   playable: true,
-  objective: '守住法軍防禦區，抵擋 25 輪攻勢，保護後方交通線。',
+  objective: `守住法軍防禦區，抵擋 ${VERDUN_WAVE_COUNT} 輪攻勢，保護後方交通線。`,
   history: {
     background:
       '德軍於 1916 年 2 月 21 日進攻凡爾登，戰鬥在城市北方高地與堡壘地帶持續近十個月。',
@@ -54,8 +55,7 @@ export const VERDUN: CampaignMissionData = {
     source: 'https://memorial-verdun.fr/en/ressources/la-bataille-de-verdun',
   },
 };
-export const ABSTRACTION =
-  '遊戲情境：路線、7 處陣地、25 波攻勢、部隊強度與資源收入是戰術抽象，並非歷史規模或精確戰鬥時序。指揮官是抽象玩家職務。';
+export const ABSTRACTION = `遊戲情境：路線、7 處陣地、${VERDUN_WAVE_COUNT} 波攻勢、部隊強度與資源收入是戰術抽象，並非歷史規模或精確戰鬥時序。指揮官是抽象玩家職務。`;
 export const DOCTRINES: Record<
   DoctrineId,
   { name: string; description: string; order: string }

@@ -6,6 +6,7 @@ import {
   SCENARIOS,
   VERDUN_SCENARIO,
   VERDUN_SCENARIO_ID,
+  VERDUN_WAVE_COUNT,
   UNIT_VARIANTS,
   scenarioErrors,
   isNationActiveOnDate,
@@ -41,7 +42,7 @@ export function runFactionTests() {
     id: 'migration-test',
     at: '2026-09-06',
     result: 'HELD',
-    waves: 25,
+    waves: VERDUN_WAVE_COUNT,
     seconds: 1000,
     earned: 600,
     spent: 500,
@@ -73,6 +74,7 @@ export function runFactionTests() {
         SCENARIOS.filter((s) => s.implemented).map((s) => s.scenarioId),
         [VERDUN_SCENARIO_ID],
       );
+      assert.equal(VERDUN_SCENARIO.waveConfiguration?.count, VERDUN_WAVE_COUNT);
       assert.equal(
         SCENARIOS.filter((s) => s.battleId === 'VERDUN_1916').length,
         2,
@@ -221,6 +223,7 @@ export function runFactionTests() {
       assert.equal(migrated.supplies, 123);
       assert.equal(migrated.parts, 45);
       assert.equal(migrated.technology, 6);
+      assert.equal(migrated.bestWave, VERDUN_WAVE_COUNT);
       assert.equal(migrated.units.MG.level, 3);
       assert.equal(migrated.settings.sound, true);
       assert.deepEqual(migrated.receipts, [run.id]);

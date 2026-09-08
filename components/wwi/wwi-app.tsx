@@ -59,6 +59,7 @@ import {
 import {
   VERDUN_SCENARIO,
   VERDUN_SCENARIO_ID,
+  VERDUN_WAVE_COUNT,
   assertPlayableScenario,
   nationById,
   activeNations,
@@ -465,7 +466,7 @@ export default function WWIApp() {
                   <ul>
                     <li>7 處陣地，300 初始戰地資源。</li>
                     <li>選擇 3 種兵種，每種可重複部署。</li>
-                    <li>第 5、10、15、20 輪後選擇戰術命令。</li>
+                    <li>第 5、10、15 輪後選擇戰術命令；第 20 輪為最終攻勢。</li>
                     <li>重大攻勢整隊時，保留火力與指揮命令。</li>
                   </ul>
                   <button onClick={() => navigate('HISTORY')}>
@@ -874,7 +875,7 @@ function Battle({
         <div className="ww-hud-stat">
           <small>攻勢</small>
           <b>
-            {String(s.wave).padStart(2, '0')} <em>/ 25</em>
+            {String(s.wave).padStart(2, '0')} <em>/ {VERDUN_WAVE_COUNT}</em>
           </b>
         </div>
         <div className="ww-hud-stat">
@@ -1349,7 +1350,10 @@ function Battle({
             </p>
             <div className="ww-result-stats">
               <span>
-                完成攻勢<b>{s.clearedWaves} / 25</b>
+                完成攻勢
+                <b>
+                  {s.clearedWaves} / {VERDUN_WAVE_COUNT}
+                </b>
               </span>
               <span>
                 作戰時間<b>{time(s.time)}</b>
@@ -1382,7 +1386,7 @@ function Battle({
             <p>
               {s.state === 'HELD'
                 ? '常規補給：100 軍需、20 零件、5 技術；首次守住另獲額外補給。'
-                : `進度補給比例：${s.clearedWaves >= 20 ? '70' : s.clearedWaves >= 15 ? '50' : s.clearedWaves >= 10 ? '35' : s.clearedWaves >= 5 ? '20' : '0'}%。完整守住戰區才會解鎖快速結算。`}
+                : `進度補給比例：${s.clearedWaves >= VERDUN_WAVE_COUNT - 2 ? '70' : s.clearedWaves >= 15 ? '50' : s.clearedWaves >= 10 ? '35' : s.clearedWaves >= 5 ? '20' : '0'}%。完整守住戰區才會解鎖快速結算。`}
             </p>
             <div className="ww-result-actions">
               <button className="ww-primary" onClick={retry} disabled={!saved}>

@@ -7,6 +7,7 @@ import {
 import { FieldAudio } from '../lib/wwi/audio';
 import { newSave } from '../lib/wwi/save';
 import { samplePath } from '../lib/wwi/data';
+import { VERDUN_WAVE_COUNT } from '../lib/wwi/campaign';
 
 // Targeted white-box fixtures exercise rare overlaps; balance runs remain unmodified.
 interface Fixture {
@@ -158,6 +159,19 @@ export async function runWWIRegressions() {
       assert.equal(f.suppressionDue, null);
     },
   );
+
+  check('Wave 20 is the final assault and a major breach is decisive', () => {
+    const e = new VerdunEngine(newSave(), 1),
+      f = fixture(e);
+    e.deploy(0, 'MG');
+    e.start();
+    f.wave = VERDUN_WAVE_COUNT;
+    f.strength = 20;
+    f.formations = [formation({ major: true, progress: 1 })];
+    e.tick(0.1);
+    assert.equal(e.snapshot().state, 'LOST');
+    assert.equal(e.snapshot().strength, 0);
+  });
 
   check(
     'Permanent engineer training improves actual support adjacency, not nonexistent damage',
