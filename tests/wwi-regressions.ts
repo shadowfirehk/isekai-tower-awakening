@@ -250,19 +250,45 @@ export async function runWWIRegressions() {
     );
     player.configure(true, false, true);
     assert(stops >= 5, 'Entering battle stops score voices');
+    const battleScore = starts;
+    assert(
+      battleScore > initial,
+      'Battle score starts after the menu score stops',
+    );
     player.shot('MG');
-    assert.equal(starts, initial + 2);
+    assert.equal(starts, battleScore + 2);
+    const afterShot = starts;
+    player.cue('DEPLOY');
+    assert.equal(
+      starts,
+      afterShot + 2,
+      'Deployment has a distinct placement cue',
+    );
+    player.cue('UPGRADE');
+    player.cue('COMMAND');
+    player.cue('ORDER_OFFER');
+    player.cue('VICTORY');
+    assert(
+      starts >= afterShot + 15,
+      'Battle actions and outcome schedule distinct cues',
+    );
     player.configure(false, false, true);
     const muted = starts;
     player.shot('RIFLE');
+    player.cue('DEFEAT');
     assert.equal(starts, muted);
     player.configure(true, false, true);
     await player.unlock();
     assert.equal(created, 1);
     assert(resumes >= 2, 'Re-enabling resumes the existing context');
+    const resumedBattleScore = starts;
+    assert(
+      resumedBattleScore > muted,
+      'Battle score resumes without a second context',
+    );
     context.currentTime += 1;
     player.shot('ARTILLERY');
-    assert.equal(starts, muted + 2);
+    assert.equal(starts, resumedBattleScore + 2);
     player.configure(true, true, false);
     const hidden = starts;
     await player.unlock();

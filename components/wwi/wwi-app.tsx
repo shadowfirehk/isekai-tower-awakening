@@ -21,7 +21,7 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { publicAssetPath } from '@/lib/game/asset-path';
-import { FieldAudio } from '@/lib/wwi/audio';
+import { FieldAudio, type AudioCue } from '@/lib/wwi/audio';
 import {
   ABSTRACTION,
   BRANCHES,
@@ -167,6 +167,7 @@ export default function WWIApp() {
     return () => document.removeEventListener('visibilitychange', configure);
   }, [save.settings.sound, screen]);
   const onShot = useCallback((kind: string) => audio.current?.shot(kind), []);
+  const onCue = useCallback((cue: AudioCue) => audio.current?.cue(cue), []);
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
@@ -202,8 +203,9 @@ export default function WWIApp() {
     },
     [storageBlocked],
   );
-  const navigate = (next: typeof screen) => {
+  const navigate = (next: typeof screen, cue: AudioCue = 'NAVIGATE') => {
     setMessage('');
+    audio.current?.cue(cue);
     setScreen(next);
   };
   const selectFaction = (id: FactionId) => {
@@ -218,7 +220,7 @@ export default function WWIApp() {
       )
     )
       return;
-    navigate('CAMPAIGN');
+    navigate('CAMPAIGN', 'CONFIRM');
   };
   const openMission = (scenario: BattleScenarioData) => {
     try {
@@ -241,7 +243,7 @@ export default function WWIApp() {
         )
       )
         return;
-      navigate('BRIEFING');
+      navigate('BRIEFING', 'CONFIRM');
     } catch (error) {
       setMessage(String(error));
     }
@@ -263,7 +265,7 @@ export default function WWIApp() {
     }
     if (!commit((s) => s)) return;
     setBattleKey((k) => k + 1);
-    navigate('BATTLE');
+    navigate('BATTLE', 'CONFIRM');
   };
   const sound = () => {
     if (
@@ -278,7 +280,9 @@ export default function WWIApp() {
       screen !== 'BATTLE',
       !document.hidden,
     );
-    void audio.current?.unlock();
+    void audio.current?.unlock().then(() => {
+      if (saveRef.current.settings.sound) audio.current?.cue('CONFIRM');
+    });
   };
   if (screen === 'BATTLE')
     return (
@@ -291,6 +295,7 @@ export default function WWIApp() {
         onUnits={() => navigate('UNITS')}
         onSound={sound}
         onShot={onShot}
+        onCue={onCue}
         sound={save.settings.sound}
       />
     );
@@ -316,8 +321,10 @@ export default function WWIApp() {
             {save.technology}
           </span>
           <button
-            aria-label={save.settings.sound ? '關閉聲音' : '開啟聲音'}
-            title="主選單配樂與戰場音效"
+            aria-label={
+              save.settings.sound ? '關閉配樂與音效' : '開啟配樂與音效'
+            }
+            title="原創司令部配樂、戰場配樂與操作音效"
             aria-pressed={save.settings.sound}
             onClick={sound}
           >
@@ -714,6 +721,7 @@ function Battle({
   onUnits,
   onSound,
   onShot,
+  onCue,
   sound,
 }: {
   save: WWISave;
@@ -723,6 +731,7 @@ function Battle({
   onUnits: () => void;
   onSound: () => void;
   onShot: (kind: string) => void;
+  onCue: (cue: AudioCue) => void;
   sound: boolean;
 }) {
   const [engine, setEngine] = useState(() => new VerdunEngine(save));
@@ -737,6 +746,9 @@ function Battle({
     session = useRef(''),
     settled = useRef(false),
     lastEffect = useRef(0),
+    previousWave = useRef(0),
+    previousState = useRef(s.state),
+    previousStrength = useRef(s.strength),
     modalWasPaused = useRef(false);
   useEffect(() => {
     session.current = crypto.randomUUID();
@@ -760,12 +772,22 @@ function Battle({
           lastEffect.current = shot.id;
           onShot(shot.kind);
         }
+        if (snap.wave > previousWave.current) onCue('WAVE');
+        if (snap.strength < previousStrength.current) onCue('BREACH');
+        if (snap.state !== previousState.current) {
+          if (snap.state === 'ORDERS') onCue('ORDER_OFFER');
+          if (snap.state === 'HELD') onCue('VICTORY');
+          if (snap.state === 'LOST') onCue('DEFEAT');
+        }
+        previousWave.current = snap.wave;
+        previousStrength.current = snap.strength;
+        previousState.current = snap.state;
       }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [engine, onShot]);
+  }, [engine, onShot, onCue]);
   const terminal = s.state === 'HELD' || s.state === 'LOST';
   useEffect(() => {
     if (!terminal || saved) return;
@@ -783,8 +805,9 @@ function Battle({
       );
     }
   }, [terminal, engine, commit]);
-  const act = (fn: () => { ok: boolean; error?: string }) => {
+  const act = (fn: () => { ok: boolean; error?: string }, cue?: AudioCue) => {
     const result = fn();
+    onCue(result.ok ? (cue ?? 'CONFIRM') : 'DENY');
     setNotice(result.ok ? '' : (result.error ?? '操作未完成'));
     setSnapshot(engine.snapshot());
   };
@@ -799,6 +822,10 @@ function Battle({
     setSaved(false);
     setHistory(false);
     lastEffect.current = 0;
+    previousWave.current = 0;
+    previousState.current = next.snapshot().state;
+    previousStrength.current = next.snapshot().strength;
+    onCue('CONFIRM');
     window.scrollTo(0, 0);
   };
   const openBranch = () => {
@@ -807,7 +834,7 @@ function Battle({
       modalWasPaused.current = engine.snapshot().paused;
       if (!s.paused) engine.togglePause();
       setBranch(selectedUnit);
-    } else act(() => engine.upgrade(selectedUnit.id));
+    } else act(() => engine.upgrade(selectedUnit.id), 'UPGRADE');
   };
   const closeBranch = () => {
     setBranch(null);
@@ -860,12 +887,26 @@ function Battle({
           <small>戰地資源</small>
           <b>{s.resource}</b>
         </div>
-        <button aria-label="暫停或繼續" onClick={() => engine.togglePause()}>
+        <button
+          aria-label="暫停或繼續"
+          onClick={() => {
+            engine.togglePause();
+            onCue('NAVIGATE');
+          }}
+        >
           {s.paused ? <Play /> : <Pause />}
         </button>
-        <button onClick={() => engine.toggleSpeed()}>{s.speed}×</button>
         <button
-          aria-label={sound ? '關閉聲音' : '開啟聲音'}
+          onClick={() => {
+            engine.toggleSpeed();
+            onCue('NAVIGATE');
+          }}
+        >
+          {s.speed}×
+        </button>
+        <button
+          aria-label={sound ? '關閉配樂與音效' : '開啟配樂與音效'}
+          title="原創戰場配樂與作戰音效"
           aria-pressed={sound}
           onClick={onSound}
         >
@@ -927,7 +968,7 @@ function Battle({
                   onClick={() => {
                     if (unit) setSelected(unit.id);
                     else {
-                      act(() => engine.deploy(index, build));
+                      act(() => engine.deploy(index, build), 'DEPLOY');
                       const newUnit = engine
                         .snapshot()
                         .positions.find((u) => u.slot === index);
@@ -1063,7 +1104,7 @@ function Battle({
               }
               onClick={() =>
                 selectedUnit &&
-                act(() => engine.activateCommand(selectedUnit.id))
+                act(() => engine.activateCommand(selectedUnit.id), 'COMMAND')
               }
             >
               戰場指揮
@@ -1072,7 +1113,7 @@ function Battle({
               disabled={
                 s.officerCD > 0 || s.disruption > 0 || s.state !== 'ACTIVE'
               }
-              onClick={() => act(() => engine.activateOfficer())}
+              onClick={() => act(() => engine.activateOfficer(), 'COMMAND')}
             >
               {DOCTRINES[save.doctrine].order}
               <small>
@@ -1084,7 +1125,7 @@ function Battle({
             {s.state === 'SETUP' && (
               <button
                 className="ww-primary"
-                onClick={() => act(() => engine.start())}
+                onClick={() => act(() => engine.start(), 'CONFIRM')}
               >
                 開始防禦作戰 <Play size={17} />
               </button>
@@ -1098,7 +1139,10 @@ function Battle({
             <button
               className={`ww-build-card ${build === id ? 'chosen' : ''}`}
               key={id}
-              onClick={() => setBuild(id)}
+              onClick={() => {
+                setBuild(id);
+                onCue('NAVIGATE');
+              }}
             >
               <Sprite index={UNITS[id].art} />
               <span>
@@ -1145,7 +1189,18 @@ function Battle({
                   s.state !== 'ACTIVE' ||
                   s.disruption > 0
                 }
-                onClick={() => act(() => engine.activateSkill(selectedUnit.id))}
+                onClick={() =>
+                  act(
+                    () => engine.activateSkill(selectedUnit.id),
+                    selectedUnit.unit === 'ENGINEER'
+                      ? 'REPAIR'
+                      : selectedUnit.unit === 'ARTILLERY'
+                        ? 'ARTILLERY_SKILL'
+                        : selectedUnit.unit === 'MG'
+                          ? 'MG_SKILL'
+                          : 'RIFLE_SKILL',
+                  )
+                }
               >
                 {selectedUnit.unit === 'ENGINEER'
                   ? '緊急修復'
@@ -1158,7 +1213,12 @@ function Battle({
                   : '就緒'}
               </button>
               {selectedUnit.unit !== 'ENGINEER' && (
-                <button onClick={() => engine.setPriority(selectedUnit.id)}>
+                <button
+                  onClick={() => {
+                    engine.setPriority(selectedUnit.id);
+                    onCue('NAVIGATE');
+                  }}
+                >
                   目標：
                   {selectedUnit.priority === 'FIRST' ? '最前方' : '最高強度'}
                 </button>
@@ -1166,7 +1226,7 @@ function Battle({
               <button
                 className="ww-muted-button"
                 onClick={() => {
-                  act(() => engine.sell(selectedUnit.id));
+                  act(() => engine.sell(selectedUnit.id), 'WITHDRAW');
                   setSelected(null);
                 }}
               >
@@ -1198,7 +1258,9 @@ function Battle({
               {s.offers.map((o, i) => (
                 <button
                   key={o.id}
-                  onClick={() => act(() => engine.chooseOrder(o.id))}
+                  onClick={() =>
+                    act(() => engine.chooseOrder(o.id), 'ORDER_CHOSEN')
+                  }
                 >
                   <span className="ww-order-number">0{i + 1}</span>
                   <small>
@@ -1228,6 +1290,7 @@ function Battle({
                   key={b.id}
                   onClick={() => {
                     const result = engine.upgrade(branch.id, b.id);
+                    onCue(result.ok ? 'UPGRADE' : 'DENY');
                     if (result.ok) closeBranch();
                     else setNotice(result.error);
                   }}
@@ -1259,7 +1322,14 @@ function Battle({
             >
               返回戰場
             </button>
-            <button onClick={onExit}>確認撤離</button>
+            <button
+              onClick={() => {
+                onCue('WITHDRAW');
+                onExit();
+              }}
+            >
+              確認撤離
+            </button>
           </section>
         </div>
       )}
@@ -1324,7 +1394,13 @@ function Battle({
               <button onClick={onUnits} disabled={!saved}>
                 升級兵種
               </button>
-              <button onClick={onExit} disabled={!saved}>
+              <button
+                onClick={() => {
+                  onCue('NAVIGATE');
+                  onExit();
+                }}
+                disabled={!saved}
+              >
                 返回戰役地圖
               </button>
             </div>
